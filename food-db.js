@@ -1,0 +1,326 @@
+// ============================================================
+// 食物营养数据库（每100g含量）
+// 字段：name(名称), kcal(热量), protein(蛋白质g), carbs(碳水g), fat(脂肪g)
+// ============================================================
+
+const FOOD_DB = [
+  // ── 主食类 ──
+  { name: "白米饭", kcal: 116, protein: 2.6, carbs: 25.9, fat: 0.3, cat: "主食" },
+  { name: "糙米饭", kcal: 123, protein: 2.7, carbs: 23.0, fat: 1.0, cat: "主食" },
+  { name: "白馒头", kcal: 223, protein: 7.0, carbs: 44.2, fat: 1.1, cat: "主食" },
+  { name: "全麦面包", kcal: 246, protein: 8.5, carbs: 46.0, fat: 3.4, cat: "主食" },
+  { name: "白面包", kcal: 266, protein: 8.0, carbs: 49.0, fat: 3.4, cat: "主食" },
+  { name: "面条(煮)", kcal: 137, protein: 4.5, carbs: 27.0, fat: 0.5, cat: "主食" },
+  { name: "意面(煮)", kcal: 131, protein: 5.0, carbs: 25.0, fat: 1.1, cat: "主食" },
+  { name: "红薯", kcal: 86, protein: 1.6, carbs: 20.1, fat: 0.1, cat: "主食" },
+  { name: "紫薯", kcal: 82, protein: 1.4, carbs: 17.6, fat: 0.2, cat: "主食" },
+  { name: "玉米", kcal: 112, protein: 4.0, carbs: 22.8, fat: 1.2, cat: "主食" },
+  { name: "燕麦片", kcal: 377, protein: 13.5, carbs: 66.3, fat: 6.7, cat: "主食" },
+  { name: "小米粥", kcal: 46, protein: 1.4, carbs: 8.4, fat: 0.7, cat: "主食" },
+  { name: "土豆", kcal: 76, protein: 2.0, carbs: 17.5, fat: 0.2, cat: "主食" },
+  { name: "山药", kcal: 57, protein: 1.9, carbs: 12.4, fat: 0.2, cat: "主食" },
+  { name: "南瓜", kcal: 22, protein: 0.7, carbs: 5.3, fat: 0.1, cat: "主食" },
+  { name: "饺子(煮)", kcal: 210, protein: 7.5, carbs: 30.0, fat: 7.0, cat: "主食" },
+  { name: "包子(猪肉)", kcal: 226, protein: 8.0, carbs: 28.0, fat: 9.0, cat: "主食" },
+  { name: "烧饼", kcal: 326, protein: 8.5, carbs: 55.0, fat: 8.0, cat: "主食" },
+  { name: "油条", kcal: 386, protein: 6.9, carbs: 51.0, fat: 17.6, cat: "主食" },
+  { name: "糯米饭", kcal: 190, protein: 3.5, carbs: 35.0, fat: 4.5, cat: "主食" },
+
+  // ── 肉类 ──
+  { name: "鸡胸肉", kcal: 133, protein: 31.0, carbs: 0.0, fat: 1.2, cat: "肉类" },
+  { name: "鸡腿肉", kcal: 181, protein: 20.0, carbs: 0.0, fat: 11.0, cat: "肉类" },
+  { name: "鸡翅", kcal: 194, protein: 17.4, carbs: 0.0, fat: 13.8, cat: "肉类" },
+  { name: "鸡蛋", kcal: 144, protein: 13.3, carbs: 2.8, fat: 8.8, cat: "蛋奶" },
+  { name: "鸡蛋白", kcal: 48, protein: 11.6, carbs: 0.6, fat: 0.1, cat: "蛋奶" },
+  { name: "鸡蛋黄", kcal: 328, protein: 15.2, carbs: 3.4, fat: 28.2, cat: "蛋奶" },
+  { name: "猪瘦肉", kcal: 143, protein: 20.3, carbs: 1.5, fat: 6.2, cat: "肉类" },
+  { name: "猪五花肉", kcal: 395, protein: 12.0, carbs: 0.0, fat: 37.0, cat: "肉类" },
+  { name: "猪排骨", kcal: 264, protein: 18.3, carbs: 0.0, fat: 20.4, cat: "肉类" },
+  { name: "猪蹄", kcal: 260, protein: 22.6, carbs: 0.0, fat: 18.8, cat: "肉类" },
+  { name: "牛肉(瘦)", kcal: 125, protein: 22.0, carbs: 0.2, fat: 4.0, cat: "肉类" },
+  { name: "牛腩", kcal: 280, protein: 17.5, carbs: 0.0, fat: 23.0, cat: "肉类" },
+  { name: "牛腱子", kcal: 123, protein: 21.5, carbs: 0.1, fat: 4.0, cat: "肉类" },
+  { name: "牛排", kcal: 175, protein: 20.0, carbs: 0.0, fat: 10.0, cat: "肉类" },
+  { name: "羊肉", kcal: 203, protein: 19.0, carbs: 0.0, fat: 14.1, cat: "肉类" },
+  { name: "羊排", kcal: 260, protein: 17.0, carbs: 0.0, fat: 21.0, cat: "肉类" },
+  { name: "鸭肉", kcal: 240, protein: 15.5, carbs: 0.2, fat: 19.7, cat: "肉类" },
+  { name: "鹅肉", kcal: 251, protein: 17.9, carbs: 0.0, fat: 19.9, cat: "肉类" },
+  { name: "猪肉肠", kcal: 300, protein: 12.0, carbs: 3.0, fat: 26.0, cat: "肉类" },
+  { name: "培根", kcal: 500, protein: 12.0, carbs: 1.0, fat: 50.0, cat: "肉类" },
+  { name: "火腿", kcal: 240, protein: 16.0, carbs: 2.0, fat: 18.0, cat: "肉类" },
+  { name: "午餐肉", kcal: 290, protein: 10.0, carbs: 5.0, fat: 26.0, cat: "肉类" },
+
+  // ── 水产类 ──
+  { name: "三文鱼", kcal: 208, protein: 22.0, carbs: 0.0, fat: 13.0, cat: "水产" },
+  { name: "金枪鱼", kcal: 130, protein: 25.0, carbs: 0.0, fat: 3.0, cat: "水产" },
+  { name: "虾仁", kcal: 99, protein: 20.0, carbs: 0.2, fat: 1.5, cat: "水产" },
+  { name: "基围虾", kcal: 87, protein: 18.6, carbs: 0.0, fat: 0.8, cat: "水产" },
+  { name: "龙利鱼", kcal: 85, protein: 17.0, carbs: 0.0, fat: 1.5, cat: "水产" },
+  { name: "鳕鱼", kcal: 82, protein: 18.0, carbs: 0.0, fat: 1.0, cat: "水产" },
+  { name: "鲈鱼", kcal: 105, protein: 18.6, carbs: 0.0, fat: 3.4, cat: "水产" },
+  { name: "带鱼", kcal: 127, protein: 17.7, carbs: 0.0, fat: 4.9, cat: "水产" },
+  { name: "鲫鱼", kcal: 108, protein: 17.1, carbs: 0.0, fat: 2.7, cat: "水产" },
+  { name: "螃蟹", kcal: 95, protein: 13.8, carbs: 2.3, fat: 2.3, cat: "水产" },
+  { name: "蛤蜊", kcal: 62, protein: 10.0, carbs: 2.0, fat: 1.1, cat: "水产" },
+  { name: "牡蛎", kcal: 73, protein: 5.0, carbs: 8.0, fat: 2.0, cat: "水产" },
+  { name: "鱿鱼", kcal: 92, protein: 17.0, carbs: 2.0, fat: 1.5, cat: "水产" },
+  { name: "章鱼", kcal: 82, protein: 14.9, carbs: 2.2, fat: 1.0, cat: "水产" },
+
+  // ── 蛋奶类 ──
+  { name: "牛奶(全脂)", kcal: 61, protein: 3.0, carbs: 5.0, fat: 3.2, cat: "蛋奶" },
+  { name: "牛奶(脱脂)", kcal: 33, protein: 3.5, carbs: 4.8, fat: 0.1, cat: "蛋奶" },
+  { name: "酸奶(原味)", kcal: 72, protein: 2.5, carbs: 9.3, fat: 2.7, cat: "蛋奶" },
+  { name: "希腊酸奶", kcal: 97, protein: 9.0, carbs: 4.0, fat: 5.0, cat: "蛋奶" },
+  { name: "奶酪", kcal: 328, protein: 25.7, carbs: 3.5, fat: 23.5, cat: "蛋奶" },
+  { name: "芝士片", kcal: 310, protein: 18.0, carbs: 2.0, fat: 25.0, cat: "蛋奶" },
+  { name: "鹌鹑蛋", kcal: 160, protein: 13.0, carbs: 1.0, fat: 11.0, cat: "蛋奶" },
+  { name: "咸鸭蛋", kcal: 190, protein: 12.7, carbs: 2.0, fat: 14.5, cat: "蛋奶" },
+
+  // ── 豆制品 ──
+  { name: "豆腐", kcal: 76, protein: 8.1, carbs: 2.0, fat: 3.7, cat: "豆制品" },
+  { name: "老豆腐", kcal: 120, protein: 12.0, carbs: 3.0, fat: 6.0, cat: "豆制品" },
+  { name: "内酯豆腐", kcal: 50, protein: 5.0, carbs: 1.8, fat: 2.5, cat: "豆制品" },
+  { name: "豆浆(无糖)", kcal: 31, protein: 3.0, carbs: 0.8, fat: 1.6, cat: "豆制品" },
+  { name: "豆腐干", kcal: 140, protein: 16.2, carbs: 2.0, fat: 7.5, cat: "豆制品" },
+  { name: "豆腐皮", kcal: 409, protein: 44.6, carbs: 7.2, fat: 21.7, cat: "豆制品" },
+  { name: "腐竹", kcal: 459, protein: 45.0, carbs: 8.0, fat: 26.0, cat: "豆制品" },
+  { name: "毛豆", kcal: 131, protein: 13.1, carbs: 10.5, fat: 5.0, cat: "豆制品" },
+  { name: "黄豆", kcal: 359, protein: 35.0, carbs: 34.2, fat: 16.0, cat: "豆制品" },
+
+  // ── 蔬菜类 ──
+  { name: "西兰花", kcal: 34, protein: 2.8, carbs: 6.6, fat: 0.4, cat: "蔬菜" },
+  { name: "菠菜", kcal: 23, protein: 2.9, carbs: 3.6, fat: 0.4, cat: "蔬菜" },
+  { name: "生菜", kcal: 15, protein: 1.4, carbs: 1.1, fat: 0.4, cat: "蔬菜" },
+  { name: "番茄", kcal: 18, protein: 0.9, carbs: 3.9, fat: 0.2, cat: "蔬菜" },
+  { name: "黄瓜", kcal: 16, protein: 0.7, carbs: 2.9, fat: 0.1, cat: "蔬菜" },
+  { name: "胡萝卜", kcal: 41, protein: 0.9, carbs: 9.6, fat: 0.2, cat: "蔬菜" },
+  { name: "白萝卜", kcal: 21, protein: 0.9, carbs: 4.0, fat: 0.1, cat: "蔬菜" },
+  { name: "白菜", kcal: 13, protein: 1.5, carbs: 2.2, fat: 0.2, cat: "蔬菜" },
+  { name: "卷心菜", kcal: 24, protein: 1.5, carbs: 4.6, fat: 0.2, cat: "蔬菜" },
+  { name: "芹菜", kcal: 16, protein: 0.7, carbs: 3.4, fat: 0.1, cat: "蔬菜" },
+  { name: "蘑菇", kcal: 22, protein: 3.1, carbs: 3.3, fat: 0.3, cat: "蔬菜" },
+  { name: "金针菇", kcal: 26, protein: 2.4, carbs: 4.7, fat: 0.4, cat: "蔬菜" },
+  { name: "香菇", kcal: 34, protein: 2.2, carbs: 6.7, fat: 0.3, cat: "蔬菜" },
+  { name: "青椒", kcal: 20, protein: 0.9, carbs: 4.6, fat: 0.2, cat: "蔬菜" },
+  { name: "茄子", kcal: 21, protein: 1.1, carbs: 4.9, fat: 0.2, cat: "蔬菜" },
+  { name: "豆芽", kcal: 18, protein: 1.6, carbs: 2.6, fat: 0.5, cat: "蔬菜" },
+  { name: "洋葱", kcal: 40, protein: 1.1, carbs: 9.0, fat: 0.1, cat: "蔬菜" },
+  { name: "大蒜", kcal: 126, protein: 4.5, carbs: 27.6, fat: 0.2, cat: "蔬菜" },
+  { name: "秋葵", kcal: 31, protein: 2.0, carbs: 7.0, fat: 0.1, cat: "蔬菜" },
+  { name: "芦笋", kcal: 20, protein: 2.2, carbs: 3.9, fat: 0.1, cat: "蔬菜" },
+  { name: "花菜", kcal: 25, protein: 1.9, carbs: 5.0, fat: 0.3, cat: "蔬菜" },
+  { name: "苦瓜", kcal: 19, protein: 0.8, carbs: 3.5, fat: 0.1, cat: "蔬菜" },
+  { name: "冬瓜", kcal: 12, protein: 0.4, carbs: 2.6, fat: 0.0, cat: "蔬菜" },
+  { name: "莲藕", kcal: 73, protein: 2.6, carbs: 15.2, fat: 0.2, cat: "蔬菜" },
+  { name: "莴笋", kcal: 15, protein: 0.9, carbs: 2.8, fat: 0.1, cat: "蔬菜" },
+  { name: "海带", kcal: 13, protein: 1.2, carbs: 2.4, fat: 0.1, cat: "蔬菜" },
+
+  // ── 水果类 ──
+  { name: "苹果", kcal: 52, protein: 0.3, carbs: 13.8, fat: 0.2, cat: "水果" },
+  { name: "香蕉", kcal: 89, protein: 1.1, carbs: 22.8, fat: 0.3, cat: "水果" },
+  { name: "橙子", kcal: 47, protein: 0.9, carbs: 11.8, fat: 0.1, cat: "水果" },
+  { name: "葡萄", kcal: 67, protein: 0.6, carbs: 17.1, fat: 0.2, cat: "水果" },
+  { name: "西瓜", kcal: 30, protein: 0.6, carbs: 7.6, fat: 0.1, cat: "水果" },
+  { name: "草莓", kcal: 32, protein: 0.7, carbs: 7.7, fat: 0.3, cat: "水果" },
+  { name: "蓝莓", kcal: 57, protein: 0.7, carbs: 14.5, fat: 0.3, cat: "水果" },
+  { name: "猕猴桃", kcal: 61, protein: 1.1, carbs: 14.7, fat: 0.5, cat: "水果" },
+  { name: "芒果", kcal: 60, protein: 0.8, carbs: 15.0, fat: 0.4, cat: "水果" },
+  { name: "菠萝", kcal: 41, protein: 0.5, carbs: 10.8, fat: 0.1, cat: "水果" },
+  { name: "桃子", kcal: 42, protein: 0.9, carbs: 10.1, fat: 0.1, cat: "水果" },
+  { name: "梨", kcal: 51, protein: 0.4, carbs: 13.1, fat: 0.1, cat: "水果" },
+  { name: "柚子", kcal: 42, protein: 0.8, carbs: 10.7, fat: 0.1, cat: "水果" },
+  { name: "樱桃", kcal: 63, protein: 1.1, carbs: 16.0, fat: 0.2, cat: "水果" },
+  { name: "火龙果", kcal: 55, protein: 1.1, carbs: 13.0, fat: 0.4, cat: "水果" },
+  { name: "榴莲", kcal: 147, protein: 1.5, carbs: 27.1, fat: 3.3, cat: "水果" },
+  { name: "牛油果", kcal: 160, protein: 2.0, carbs: 8.5, fat: 14.7, cat: "水果" },
+  { name: "柠檬", kcal: 37, protein: 0.7, carbs: 6.5, fat: 0.1, cat: "水果" },
+  { name: "荔枝", kcal: 66, protein: 0.8, carbs: 16.5, fat: 0.4, cat: "水果" },
+  { name: "山竹", kcal: 72, protein: 0.4, carbs: 18.0, fat: 0.2, cat: "水果" },
+
+  // ── 坚果类 ──
+  { name: "核桃", kcal: 654, protein: 15.2, carbs: 13.7, fat: 65.2, cat: "坚果" },
+  { name: "杏仁", kcal: 579, protein: 21.0, carbs: 21.0, fat: 49.0, cat: "坚果" },
+  { name: "腰果", kcal: 553, protein: 18.0, carbs: 30.0, fat: 44.0, cat: "坚果" },
+  { name: "花生", kcal: 567, protein: 25.8, carbs: 16.1, fat: 49.2, cat: "坚果" },
+  { name: "开心果", kcal: 560, protein: 20.0, carbs: 28.0, fat: 45.0, cat: "坚果" },
+  { name: "瓜子", kcal: 582, protein: 19.3, carbs: 20.0, fat: 49.8, cat: "坚果" },
+  { name: "芝麻", kcal: 573, protein: 20.0, carbs: 23.0, fat: 49.0, cat: "坚果" },
+  { name: "花生酱", kcal: 588, protein: 25.0, carbs: 20.0, fat: 50.0, cat: "坚果" },
+
+  // ── 零食饮料 ──
+  { name: "巧克力", kcal: 546, protein: 5.0, carbs: 59.0, fat: 31.0, cat: "零食" },
+  { name: "黑巧克力(70%)", kcal: 598, protein: 7.8, carbs: 38.0, fat: 42.6, cat: "零食" },
+  { name: "薯片", kcal: 536, protein: 6.0, carbs: 53.0, fat: 34.0, cat: "零食" },
+  { name: "饼干", kcal: 433, protein: 7.0, carbs: 71.0, fat: 14.0, cat: "零食" },
+  { name: "蛋糕", kcal: 348, protein: 5.0, carbs: 57.0, fat: 12.0, cat: "零食" },
+  { name: "冰淇淋", kcal: 207, protein: 3.5, carbs: 24.0, fat: 11.0, cat: "零食" },
+  { name: "可乐", kcal: 42, protein: 0.0, carbs: 10.6, fat: 0.0, cat: "饮料" },
+  { name: "雪碧", kcal: 41, protein: 0.0, carbs: 10.2, fat: 0.0, cat: "饮料" },
+  { name: "橙汁", kcal: 45, protein: 0.7, carbs: 10.4, fat: 0.2, cat: "饮料" },
+  { name: "苹果汁", kcal: 46, protein: 0.1, carbs: 11.3, fat: 0.1, cat: "饮料" },
+  { name: "啤酒", kcal: 43, protein: 0.5, carbs: 3.6, fat: 0.0, cat: "饮料" },
+  { name: "红酒", kcal: 85, protein: 0.1, carbs: 2.6, fat: 0.0, cat: "饮料" },
+  { name: "白酒", kcal: 250, protein: 0.0, carbs: 0.5, fat: 0.0, cat: "饮料" },
+  { name: "奶茶", kcal: 65, protein: 1.0, carbs: 10.0, fat: 2.5, cat: "饮料" },
+  { name: "拿铁咖啡", kcal: 41, protein: 2.5, carbs: 4.0, fat: 1.8, cat: "饮料" },
+  { name: "美式咖啡", kcal: 2, protein: 0.1, carbs: 0.0, fat: 0.0, cat: "饮料" },
+  { name: "蛋白粉(乳清)", kcal: 380, protein: 80.0, carbs: 5.0, fat: 3.0, cat: "补剂" },
+  { name: "蛋白粉(植物)", kcal: 370, protein: 70.0, carbs: 8.0, fat: 5.0, cat: "补剂" },
+  { name: "肌酸", kcal: 0, protein: 0.0, carbs: 0.0, fat: 0.0, cat: "补剂" },
+  { name: "能量棒", kcal: 380, protein: 20.0, carbs: 45.0, fat: 12.0, cat: "零食" },
+  { name: "牛肉干", kcal: 320, protein: 45.0, carbs: 5.0, fat: 8.0, cat: "零食" },
+
+  // ── 豆类及制品补充 ──
+  { name: "豆饼", kcal: 310, protein: 35.0, carbs: 20.0, fat: 10.0, cat: "豆制品" },
+  { name: "红豆", kcal: 324, protein: 20.2, carbs: 60.7, fat: 0.6, cat: "豆制品" },
+  { name: "绿豆", kcal: 329, protein: 21.6, carbs: 62.0, fat: 0.8, cat: "豆制品" },
+  { name: "黑豆", kcal: 381, protein: 36.0, carbs: 33.6, fat: 15.9, cat: "豆制品" },
+  { name: "鹰嘴豆", kcal: 364, protein: 19.3, carbs: 60.6, fat: 6.0, cat: "豆制品" },
+  { name: "扁豆", kcal: 353, protein: 25.8, carbs: 60.1, fat: 1.1, cat: "豆制品" },
+  { name: "豆渣", kcal: 85, protein: 5.0, carbs: 10.0, fat: 2.5, cat: "豆制品" },
+  { name: "豆腐乳", kcal: 130, protein: 10.0, carbs: 4.0, fat: 8.0, cat: "豆制品" },
+  { name: "纳豆", kcal: 200, protein: 16.5, carbs: 13.0, fat: 10.0, cat: "豆制品" },
+
+  // ── 常见补充食物 ──
+  { name: "蛋白棒", kcal: 370, protein: 30.0, carbs: 38.0, fat: 10.0, cat: "补剂" },
+  { name: "增肌粉", kcal: 390, protein: 25.0, carbs: 60.0, fat: 4.0, cat: "补剂" },
+  { name: "鸡肝", kcal: 119, protein: 17.0, carbs: 1.5, fat: 4.8, cat: "肉类" },
+  { name: "猪肝", kcal: 129, protein: 19.3, carbs: 5.0, fat: 3.5, cat: "肉类" },
+  { name: "鸡心", kcal: 152, protein: 16.0, carbs: 0.6, fat: 9.3, cat: "肉类" },
+  { name: "牛舌", kcal: 224, protein: 15.5, carbs: 0.0, fat: 18.0, cat: "肉类" },
+  { name: "羊腰", kcal: 100, protein: 16.0, carbs: 2.5, fat: 3.0, cat: "肉类" },
+  { name: "马鲛鱼", kcal: 140, protein: 21.0, carbs: 0.0, fat: 5.5, cat: "水产" },
+  { name: "黄花鱼", kcal: 99, protein: 17.9, carbs: 0.0, fat: 2.4, cat: "水产" },
+  { name: "鳗鱼", kcal: 310, protein: 18.0, carbs: 0.0, fat: 26.0, cat: "水产" },
+  { name: "沙丁鱼", kcal: 208, protein: 25.0, carbs: 0.0, fat: 11.5, cat: "水产" },
+  { name: "罗非鱼", kcal: 96, protein: 20.0, carbs: 0.0, fat: 1.8, cat: "水产" },
+  { name: "墨鱼", kcal: 83, protein: 15.2, carbs: 1.5, fat: 1.3, cat: "水产" },
+  { name: "海参", kcal: 78, protein: 16.5, carbs: 2.0, fat: 0.2, cat: "水产" },
+  { name: "皮蛋", kcal: 171, protein: 14.2, carbs: 1.3, fat: 11.8, cat: "蛋奶" },
+  { name: "鸭蛋", kcal: 180, protein: 12.6, carbs: 3.1, fat: 13.0, cat: "蛋奶" },
+  { name: "鹅蛋", kcal: 196, protein: 13.9, carbs: 2.0, fat: 14.0, cat: "蛋奶" },
+  { name: "酸奶油", kcal: 193, protein: 2.5, carbs: 4.3, fat: 18.0, cat: "蛋奶" },
+  { name: "奶油奶酪", kcal: 342, protein: 6.0, carbs: 3.0, fat: 34.0, cat: "蛋奶" },
+  { name: "高粱", kcal: 339, protein: 10.3, carbs: 75.0, fat: 3.3, cat: "主食" },
+  { name: "荞麦", kcal: 337, protein: 10.0, carbs: 73.0, fat: 2.5, cat: "主食" },
+  { name: "薏米", kcal: 357, protein: 12.8, carbs: 69.1, fat: 3.3, cat: "主食" },
+  { name: "黑米", kcal: 346, protein: 9.5, carbs: 72.0, fat: 2.5, cat: "主食" },
+  { name: "小米", kcal: 358, protein: 9.0, carbs: 75.0, fat: 3.1, cat: "主食" },
+  { name: "芋头", kcal: 82, protein: 2.2, carbs: 17.0, fat: 0.2, cat: "主食" },
+  { name: "木薯", kcal: 160, protein: 1.4, carbs: 38.0, fat: 0.3, cat: "主食" },
+  { name: "山楂", kcal: 102, protein: 0.7, carbs: 25.1, fat: 0.2, cat: "水果" },
+  { name: "柿子", kcal: 71, protein: 0.5, carbs: 18.5, fat: 0.1, cat: "水果" },
+  { name: "石榴", kcal: 63, protein: 1.3, carbs: 14.5, fat: 0.2, cat: "水果" },
+  { name: "百香果", kcal: 97, protein: 2.2, carbs: 23.4, fat: 0.7, cat: "水果" },
+  { name: "椰子肉", kcal: 354, protein: 3.3, carbs: 15.2, fat: 33.5, cat: "水果" },
+  { name: "枣", kcal: 264, protein: 3.5, carbs: 63.0, fat: 0.5, cat: "水果" },
+  { name: "枇杷", kcal: 38, protein: 0.4, carbs: 8.5, fat: 0.2, cat: "水果" },
+  { name: "杨梅", kcal: 30, protein: 0.6, carbs: 6.7, fat: 0.2, cat: "水果" },
+  { name: "桑葚", kcal: 49, protein: 1.7, carbs: 9.7, fat: 0.4, cat: "水果" },
+  { name: "银耳", kcal: 21, protein: 1.8, carbs: 3.4, fat: 0.2, cat: "蔬菜" },
+  { name: "木耳", kcal: 27, protein: 2.2, carbs: 3.7, fat: 0.2, cat: "蔬菜" },
+  { name: "竹笋", kcal: 19, protein: 2.2, carbs: 2.5, fat: 0.2, cat: "蔬菜" },
+  { name: "茭白", kcal: 23, protein: 1.2, carbs: 4.2, fat: 0.2, cat: "蔬菜" },
+  { name: "空心菜", kcal: 20, protein: 2.2, carbs: 3.1, fat: 0.3, cat: "蔬菜" },
+  { name: "韭菜", kcal: 25, protein: 2.4, carbs: 3.2, fat: 0.4, cat: "蔬菜" },
+  { name: "香菜", kcal: 23, protein: 2.0, carbs: 3.7, fat: 0.4, cat: "蔬菜" },
+  { name: "紫菜", kcal: 207, protein: 35.0, carbs: 21.0, fat: 1.6, cat: "蔬菜" },
+  { name: "裙带菜", kcal: 45, protein: 2.5, carbs: 9.0, fat: 0.5, cat: "蔬菜" },
+  { name: "栗子", kcal: 224, protein: 4.2, carbs: 46.0, fat: 1.5, cat: "坚果" },
+  { name: "松子", kcal: 673, protein: 13.7, carbs: 14.0, fat: 68.4, cat: "坚果" },
+  { name: "榛子", kcal: 628, protein: 15.0, carbs: 17.0, fat: 61.0, cat: "坚果" },
+  { name: "夏威夷果", kcal: 718, protein: 7.9, carbs: 14.0, fat: 75.8, cat: "坚果" },
+  { name: "奇亚籽", kcal: 486, protein: 16.5, carbs: 42.0, fat: 30.7, cat: "坚果" },
+  { name: "亚麻籽", kcal: 534, protein: 18.3, carbs: 29.0, fat: 42.2, cat: "坚果" },
+
+  // ── 调味品/油类 ──
+  { name: "橄榄油", kcal: 884, protein: 0.0, carbs: 0.0, fat: 100.0, cat: "调味品" },
+  { name: "花生油", kcal: 899, protein: 0.0, carbs: 0.0, fat: 99.9, cat: "调味品" },
+  { name: "黄油", kcal: 717, protein: 0.9, carbs: 0.1, fat: 81.1, cat: "调味品" },
+  { name: "沙拉酱", kcal: 680, protein: 1.0, carbs: 2.0, fat: 75.0, cat: "调味品" },
+  { name: "番茄酱", kcal: 80, protein: 1.7, carbs: 18.0, fat: 0.2, cat: "调味品" },
+  { name: "酱油", kcal: 53, protein: 5.6, carbs: 5.9, fat: 0.0, cat: "调味品" },
+  { name: "醋", kcal: 18, protein: 2.0, carbs: 2.5, fat: 0.0, cat: "调味品" },
+  { name: "盐", kcal: 0, protein: 0.0, carbs: 0.0, fat: 0.0, cat: "调味品" },
+  { name: "糖", kcal: 387, protein: 0.0, carbs: 100.0, fat: 0.0, cat: "调味品" },
+  { name: "蜂蜜", kcal: 304, protein: 0.3, carbs: 82.4, fat: 0.0, cat: "调味品" },
+
+  // ── 快餐/外卖 ──
+  { name: "炸鸡腿", kcal: 250, protein: 18.0, carbs: 8.0, fat: 16.0, cat: "快餐" },
+  { name: "炸鸡排", kcal: 280, protein: 20.0, carbs: 10.0, fat: 18.0, cat: "快餐" },
+  { name: "汉堡(牛肉)", kcal: 265, protein: 13.0, carbs: 30.0, fat: 10.0, cat: "快餐" },
+  { name: "薯条", kcal: 312, protein: 3.4, carbs: 41.0, fat: 15.0, cat: "快餐" },
+  { name: "披萨", kcal: 266, protein: 11.0, carbs: 33.0, fat: 10.0, cat: "快餐" },
+  { name: "炒饭", kcal: 163, protein: 5.0, carbs: 25.0, fat: 5.0, cat: "快餐" },
+  { name: "炒面", kcal: 180, protein: 6.0, carbs: 28.0, fat: 6.0, cat: "快餐" },
+  { name: "麻辣烫", kcal: 80, protein: 8.0, carbs: 5.0, fat: 3.0, cat: "快餐" },
+  { name: "火锅(肉+菜)", kcal: 130, protein: 12.0, carbs: 2.0, fat: 8.0, cat: "快餐" },
+  { name: "寿司", kcal: 140, protein: 6.0, carbs: 25.0, fat: 2.0, cat: "快餐" },
+  { name: "三明治", kcal: 230, protein: 12.0, carbs: 28.0, fat: 8.0, cat: "快餐" },
+  { name: "鸡肉卷", kcal: 210, protein: 15.0, carbs: 22.0, fat: 7.0, cat: "快餐" },
+
+  // ── 常见中餐菜肴 ──
+  { name: "番茄炒蛋", kcal: 104, protein: 5.0, carbs: 4.0, fat: 7.0, cat: "中餐" },
+  { name: "宫保鸡丁", kcal: 165, protein: 18.0, carbs: 6.0, fat: 8.0, cat: "中餐" },
+  { name: "鱼香肉丝", kcal: 150, protein: 10.0, carbs: 8.0, fat: 9.0, cat: "中餐" },
+  { name: "红烧肉", kcal: 300, protein: 12.0, carbs: 5.0, fat: 26.0, cat: "中餐" },
+  { name: "糖醋排骨", kcal: 290, protein: 16.0, carbs: 15.0, fat: 18.0, cat: "中餐" },
+  { name: "麻婆豆腐", kcal: 90, protein: 8.0, carbs: 3.0, fat: 5.0, cat: "中餐" },
+  { name: "清蒸鱼", kcal: 95, protein: 17.0, carbs: 0.5, fat: 3.0, cat: "中餐" },
+  { name: "回锅肉", kcal: 280, protein: 14.0, carbs: 4.0, fat: 23.0, cat: "中餐" },
+  { name: "地三鲜", kcal: 120, protein: 2.0, carbs: 12.0, fat: 7.0, cat: "中餐" },
+  { name: "蒜蓉西兰花", kcal: 45, protein: 3.0, carbs: 5.0, fat: 2.0, cat: "中餐" },
+  { name: "口水鸡", kcal: 200, protein: 20.0, carbs: 2.0, fat: 13.0, cat: "中餐" },
+  { name: "水煮鱼", kcal: 120, protein: 15.0, carbs: 1.0, fat: 6.0, cat: "中餐" },
+  { name: "蛋炒饭", kcal: 170, protein: 5.5, carbs: 26.0, fat: 5.0, cat: "中餐" },
+  { name: "扬州炒饭", kcal: 190, protein: 7.0, carbs: 27.0, fat: 6.5, cat: "中餐" },
+  { name: "白切鸡", kcal: 170, protein: 21.0, carbs: 0.5, fat: 9.0, cat: "中餐" },
+  { name: "烧鹅", kcal: 280, protein: 18.0, carbs: 1.0, fat: 22.0, cat: "中餐" },
+  { name: "叉烧", kcal: 260, protein: 20.0, carbs: 10.0, fat: 16.0, cat: "中餐" },
+  { name: "皮蛋瘦肉粥", kcal: 55, protein: 4.0, carbs: 8.0, fat: 1.5, cat: "中餐" },
+  { name: "牛肉面", kcal: 120, protein: 7.0, carbs: 16.0, fat: 3.0, cat: "中餐" },
+  { name: "兰州拉面", kcal: 115, protein: 5.0, carbs: 20.0, fat: 2.0, cat: "中餐" },
+  { name: "煎饼果子", kcal: 230, protein: 8.0, carbs: 30.0, fat: 9.0, cat: "中餐" },
+  { name: "肉夹馍", kcal: 250, protein: 12.0, carbs: 28.0, fat: 10.0, cat: "中餐" },
+  { name: "凉皮", kcal: 120, protein: 3.0, carbs: 25.0, fat: 1.0, cat: "中餐" },
+  { name: "黄焖鸡", kcal: 140, protein: 16.0, carbs: 3.0, fat: 7.0, cat: "中餐" },
+  { name: "酸菜鱼", kcal: 85, protein: 12.0, carbs: 1.5, fat: 3.5, cat: "中餐" },
+  { name: "毛血旺", kcal: 180, protein: 13.0, carbs: 3.0, fat: 13.0, cat: "中餐" },
+];
+
+// 按类别索引
+const FOOD_BY_CAT = {};
+FOOD_DB.forEach(f => {
+  if (!FOOD_BY_CAT[f.cat]) FOOD_BY_CAT[f.cat] = [];
+  FOOD_BY_CAT[f.cat].push(f);
+});
+
+// 搜索食物（模糊匹配）
+function searchFood(query) {
+  const q = query.toLowerCase().trim();
+  if (!q) return [];
+  return FOOD_DB
+    .filter(f => f.name.includes(q) || f.name.toLowerCase().includes(q))
+    .slice(0, 20);
+}
+
+// 根据名称精确查找
+function findFood(name) {
+  return FOOD_DB.find(f => f.name === name);
+}
+
+// 计算指定克数的营养
+function calcNutrition(foodName, grams) {
+  const food = findFood(foodName);
+  if (!food) return null;
+  const ratio = grams / 100;
+  return {
+    name: food.name,
+    amount: grams,
+    unit: "g",
+    kcal: Math.round(food.kcal * ratio),
+    protein: +(food.protein * ratio).toFixed(1),
+    carbs: +(food.carbs * ratio).toFixed(1),
+    fat: +(food.fat * ratio).toFixed(1),
+  };
+}

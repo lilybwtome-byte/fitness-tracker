@@ -1,0 +1,2469 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="theme-color" content="#1e293b">
+<title>健身记录</title>
+<style>
+/* ============================================================
+   CSS Variables & Reset
+   ============================================================ */
+:root {
+  --bg: #f1f5f9;
+  --surface: #ffffff;
+  --text: #1e293b;
+  --text-secondary: #64748b;
+  --border: #e2e8f0;
+  --primary: #3b82f6;
+  --primary-light: #dbeafe;
+  --danger: #ef4444;
+  --danger-light: #fee2e2;
+  --success: #10b981;
+  --success-light: #d1fae5;
+  --warning: #f59e0b;
+  --warning-light: #fef3c7;
+  --info: #06b6d4;
+  --info-light: #cffafe;
+  --color-back: #3b82f6;
+  --color-back-bg: #dbeafe;
+  --color-chest: #ef4444;
+  --color-chest-bg: #fee2e2;
+  --color-legs: #10b981;
+  --color-legs-bg: #d1fae5;
+  --color-swim: #06b6d4;
+  --color-swim-bg: #cffafe;
+  --color-rest: #94a3b8;
+  --color-rest-bg: #f1f5f9;
+  --radius: 12px;
+  --shadow: 0 1px 3px rgba(0,0,0,.08), 0 1px 2px rgba(0,0,0,.06);
+  --shadow-lg: 0 10px 25px rgba(0,0,0,.1);
+  --nav-height: 64px;
+  --header-height: 52px;
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+html, body {
+  height: 100%; overflow: hidden;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "PingFang SC", "Microsoft YaHei", sans-serif;
+  font-size: 15px; color: var(--text); background: var(--bg);
+  -webkit-tap-highlight-color: transparent;
+  -webkit-font-smoothing: antialiased;
+  user-select: none; -webkit-user-select: none;
+}
+
+button { font: inherit; cursor: pointer; border: none; outline: none; }
+input, select { font: inherit; border: none; outline: none; }
+
+/* ============================================================
+   Layout
+   ============================================================ */
+.app {
+  height: 100%; display: flex; flex-direction: column;
+  max-width: 480px; margin: 0 auto;
+  position: relative; background: var(--bg);
+}
+
+.header {
+  height: var(--header-height); min-height: var(--header-height);
+  background: #1e293b; color: #fff; display: flex;
+  align-items: center; justify-content: center;
+  padding: 0 16px; position: relative; z-index: 10;
+}
+.header h1 { font-size: 17px; font-weight: 600; letter-spacing: .5px; }
+
+.main {
+  flex: 1; overflow-y: auto; overflow-x: hidden;
+  padding: 12px 12px 16px;
+  -webkit-overflow-scrolling: touch;
+  scroll-behavior: smooth;
+}
+
+/* Bottom Nav */
+.nav {
+  height: var(--nav-height); min-height: var(--nav-height);
+  padding-bottom: var(--safe-bottom);
+  background: var(--surface); border-top: 1px solid var(--border);
+  display: flex; align-items: center; position: relative; z-index: 10;
+}
+.nav-item {
+  flex: 1; display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  gap: 2px; cursor: pointer; color: var(--text-secondary);
+  transition: color .15s; padding: 6px 0;
+  -webkit-tap-highlight-color: transparent;
+}
+.nav-item.active { color: var(--primary); }
+.nav-item .icon { font-size: 22px; line-height: 1; }
+.nav-item .label { font-size: 11px; font-weight: 500; }
+
+/* ============================================================
+   Tab Panels
+   ============================================================ */
+.tab-panel { display: none; }
+.tab-panel.active { display: block; }
+
+/* ============================================================
+   Calendar
+   ============================================================ */
+.cal-header {
+  display: flex; align-items: center; justify-content: space-between;
+  margin-bottom: 12px;
+}
+.cal-header .month-label { font-size: 18px; font-weight: 700; color: var(--text); }
+.cal-header button {
+  width: 36px; height: 36px; border-radius: 50%;
+  background: var(--surface); color: var(--text);
+  font-size: 18px; display: flex; align-items: center; justify-content: center;
+  box-shadow: var(--shadow); transition: transform .1s;
+}
+.cal-header button:active { transform: scale(.92); }
+
+.cal-weekdays {
+  display: grid; grid-template-columns: repeat(7, 1fr);
+  text-align: center; margin-bottom: 4px;
+}
+.cal-weekdays span {
+  font-size: 12px; color: var(--text-secondary);
+  font-weight: 600; padding: 6px 0;
+}
+
+.cal-grid {
+  display: grid; grid-template-columns: repeat(7, 1fr);
+  gap: 3px;
+}
+.cal-cell {
+  aspect-ratio: 1; border-radius: 8px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 14px; font-weight: 500; cursor: pointer;
+  position: relative; transition: transform .1s;
+  background: var(--surface); color: var(--text);
+}
+.cal-cell:active { transform: scale(.92); }
+.cal-cell.empty { background: transparent; cursor: default; }
+.cal-cell.empty:active { transform: none; }
+.cal-cell.today {
+  box-shadow: inset 0 0 0 2px var(--primary);
+  font-weight: 700;
+}
+.cal-cell.selected {
+  box-shadow: inset 0 0 0 3px #1e293b;
+  transform: scale(1.05);
+  z-index: 2;
+}
+.cal-cell.today.selected {
+  box-shadow: inset 0 0 0 3px #1e293b, inset 0 0 0 5px var(--primary);
+}
+.cal-cell.type-back { background: var(--color-back-bg); color: #1d4ed8; }
+.cal-cell.type-chest { background: var(--color-chest-bg); color: #b91c1c; }
+.cal-cell.type-legs { background: var(--color-legs-bg); color: #047857; }
+.cal-cell.type-swim { background: var(--color-swim-bg); color: #0e7490; }
+.cal-cell.type-rest { background: var(--color-rest-bg); color: #64748b; }
+
+.cal-legend {
+  display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px;
+  justify-content: center;
+}
+.cal-legend span {
+  font-size: 11px; padding: 4px 10px; border-radius: 20px;
+  font-weight: 500;
+}
+.cal-legend .leg-back { background: var(--color-back-bg); color: #1d4ed8; }
+.cal-legend .leg-chest { background: var(--color-chest-bg); color: #b91c1c; }
+.cal-legend .leg-legs { background: var(--color-legs-bg); color: #047857; }
+.cal-legend .leg-swim { background: var(--color-swim-bg); color: #0e7490; }
+.cal-legend .leg-rest { background: var(--color-rest-bg); color: #64748b; }
+
+.cal-summary {
+  display: flex; gap: 8px; margin-bottom: 14px; flex-wrap: wrap;
+}
+.cal-summary .tag {
+  font-size: 12px; padding: 4px 10px; border-radius: 16px;
+  background: var(--surface); color: var(--text-secondary);
+  font-weight: 500;
+}
+.cal-summary .tag strong { color: var(--text); }
+
+/* ============================================================
+   Training Tab
+   ============================================================ */
+.type-selector {
+  display: flex; gap: 6px; overflow-x: auto;
+  padding-bottom: 8px; margin-bottom: 12px;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+}
+.type-selector::-webkit-scrollbar { display: none; }
+.type-chip {
+  flex-shrink: 0; padding: 8px 16px; border-radius: 20px;
+  font-size: 13px; font-weight: 600; white-space: nowrap;
+  background: var(--surface); color: var(--text-secondary);
+  box-shadow: var(--shadow); transition: all .15s;
+}
+.type-chip.active { color: #fff; }
+.type-chip.active.type-back { background: var(--color-back); }
+.type-chip.active.type-chest { background: var(--color-chest); }
+.type-chip.active.type-legs { background: var(--color-legs); }
+.type-chip.active.type-swim { background: var(--color-swim); }
+.type-chip.active.type-rest { background: var(--color-rest); }
+
+.exercise-card {
+  background: var(--surface); border-radius: var(--radius);
+  padding: 14px; margin-bottom: 10px; box-shadow: var(--shadow);
+}
+.exercise-card .ex-header {
+  display: flex; align-items: center; justify-content: space-between;
+  margin-bottom: 10px;
+}
+.exercise-card .ex-name {
+  font-weight: 600; font-size: 15px; flex: 1;
+}
+.exercise-card .ex-delete {
+  width: 28px; height: 28px; border-radius: 50%;
+  background: var(--danger-light); color: var(--danger);
+  font-size: 16px; display: flex; align-items: center; justify-content: center;
+}
+.set-row {
+  display: flex; align-items: center; gap: 8px; margin-bottom: 6px;
+  font-size: 13px;
+}
+.set-row .set-num { width: 28px; color: var(--text-secondary); font-weight: 500; text-align: center; }
+.set-row input {
+  width: 64px; height: 36px; text-align: center; background: var(--bg);
+  border-radius: 8px; font-size: 14px; font-weight: 500;
+}
+.set-row .unit { color: var(--text-secondary); font-size: 12px; flex-shrink: 0; }
+.set-row .del-set {
+  width: 28px; height: 28px; border-radius: 50%;
+  background: var(--danger-light); color: var(--danger);
+  font-size: 14px; display: flex; align-items: center; justify-content: center;
+}
+.set-row .copy-set {
+  width: 26px; height: 26px; border-radius: 50%;
+  background: var(--primary-light); color: var(--primary);
+  font-size: 12px; display: flex; align-items: center; justify-content: center;
+}
+.add-set-btn {
+  font-size: 12px; color: var(--primary); font-weight: 600;
+  padding: 6px 12px; background: var(--primary-light); border-radius: 16px;
+  margin-top: 4px;
+}
+
+.btn {
+  display: flex; align-items: center; justify-content: center;
+  gap: 6px; padding: 10px 20px; border-radius: 20px;
+  font-size: 13px; font-weight: 600; transition: all .15s;
+}
+.btn:active { transform: scale(.96); }
+.btn-primary { background: var(--primary); color: #fff; }
+.btn-outline { background: var(--surface); color: var(--primary); border: 1.5px solid var(--primary); }
+.btn-danger { background: var(--danger); color: #fff; }
+.btn-block { width: 100%; padding: 14px; border-radius: var(--radius); font-size: 15px; }
+.btn-sm { padding: 6px 14px; font-size: 12px; border-radius: 16px; }
+
+.btn-row { display: flex; gap: 8px; margin-top: 12px; flex-wrap: wrap; }
+
+/* ============================================================
+   Diet Tab
+   ============================================================ */
+.macro-bars { margin-bottom: 16px; }
+.macro-bar-row {
+  display: flex; align-items: center; gap: 10px; margin-bottom: 8px;
+}
+.macro-bar-row .m-label { width: 40px; font-size: 12px; font-weight: 600; text-align: right; }
+.macro-bar-row .m-bar-wrap {
+  flex: 1; height: 20px; background: var(--bg); border-radius: 10px; overflow: hidden; position: relative;
+}
+.macro-bar-row .m-bar-fill {
+  height: 100%; border-radius: 10px; transition: width .3s;
+  min-width: 0; position: absolute; left: 0; top: 0;
+}
+.m-bar-protein { background: #f59e0b; }
+.m-bar-carbs { background: #f97316; }
+.m-bar-fat { background: #ef4444; }
+.macro-bar-row .m-nums { width: 72px; font-size: 11px; color: var(--text-secondary); text-align: left; white-space: nowrap; }
+
+.daily-kcal {
+  text-align: center; padding: 12px; background: var(--surface);
+  border-radius: var(--radius); margin-bottom: 12px; box-shadow: var(--shadow);
+}
+.daily-kcal .kcal-num { font-size: 32px; font-weight: 800; color: var(--text); }
+.daily-kcal .kcal-label { font-size: 12px; color: var(--text-secondary); }
+
+.meal-section { margin-bottom: 12px; }
+.meal-section .meal-title {
+  font-size: 13px; font-weight: 700; color: var(--text-secondary);
+  margin-bottom: 6px; text-transform: uppercase; letter-spacing: .5px;
+}
+.meal-item {
+  background: var(--surface); border-radius: 10px; padding: 10px 14px;
+  margin-bottom: 4px; display: flex; align-items: center; justify-content: space-between;
+  box-shadow: var(--shadow);
+}
+.meal-item .mi-info { flex: 1; }
+.meal-item .mi-name { font-weight: 600; font-size: 14px; }
+.meal-item .mi-amount { font-size: 12px; color: var(--text-secondary); }
+.meal-item .mi-macros { font-size: 11px; color: var(--text-secondary); margin-top: 2px; }
+.meal-item .mi-del { color: var(--danger); font-size: 18px; padding: 4px 8px; }
+
+.food-search {
+  position: relative; margin-bottom: 8px;
+}
+.food-search input {
+  width: 100%; height: 44px; padding: 0 44px 0 16px;
+  background: var(--surface); border-radius: 22px;
+  font-size: 14px; box-shadow: var(--shadow);
+}
+.food-search .search-icon {
+  position: absolute; right: 12px; top: 50%; transform: translateY(-50%);
+  font-size: 18px; color: var(--text-secondary);
+}
+.search-results {
+  background: var(--surface); border-radius: var(--radius);
+  max-height: 200px; overflow-y: auto; box-shadow: var(--shadow-lg);
+  display: none; position: absolute; z-index: 20; left: 0; right: 0;
+}
+.search-results.show { display: block; }
+.search-results .sr-item {
+  padding: 12px 14px; border-bottom: 1px solid var(--border);
+  cursor: pointer; display: flex; justify-content: space-between; align-items: center;
+}
+.search-results .sr-item:last-child { border-bottom: none; }
+.search-results .sr-name { font-weight: 600; }
+.search-results .sr-macros { font-size: 11px; color: var(--text-secondary); }
+
+.food-add-form {
+  background: var(--surface); border-radius: var(--radius);
+  padding: 14px; margin-bottom: 8px; box-shadow: var(--shadow);
+  display: none;
+}
+.food-add-form.show { display: block; }
+.food-add-form .form-row {
+  display: flex; gap: 8px; align-items: center; margin-bottom: 8px;
+}
+.food-add-form .form-row:last-child { margin-bottom: 0; }
+.food-add-form input {
+  height: 40px; background: var(--bg); border-radius: 8px;
+  padding: 0 12px; font-size: 14px; flex: 1;
+}
+.food-add-form select {
+  height: 40px; background: var(--bg); border-radius: 8px;
+  padding: 0 12px; font-size: 14px;
+}
+
+/* ============================================================
+   Stats Tab
+   ============================================================ */
+.stat-card {
+  background: var(--surface); border-radius: var(--radius);
+  padding: 16px; margin-bottom: 10px; box-shadow: var(--shadow);
+}
+.stat-card .sc-title { font-size: 13px; color: var(--text-secondary); font-weight: 600; margin-bottom: 10px; }
+.stat-grid {
+  display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px;
+}
+.stat-item {
+  text-align: center; padding: 12px 8px; background: var(--bg);
+  border-radius: 10px;
+}
+.stat-item .si-num { font-size: 24px; font-weight: 800; color: var(--primary); }
+.stat-item .si-label { font-size: 11px; color: var(--text-secondary); margin-top: 2px; }
+
+.freq-bar { margin-bottom: 8px; }
+.freq-bar .fb-label { font-size: 12px; font-weight: 600; margin-bottom: 3px; display: flex; justify-content: space-between; }
+.freq-bar .fb-track {
+  height: 8px; background: var(--bg); border-radius: 4px; overflow: hidden;
+}
+.freq-bar .fb-fill { height: 100%; border-radius: 4px; transition: width .3s; }
+
+.weight-chart { margin-top: 8px; }
+.weight-chart canvas { width: 100%; height: 180px; }
+
+/* ============================================================
+   Modal / Popup
+   ============================================================ */
+.modal-overlay {
+  position: fixed; inset: 0; background: rgba(0,0,0,.5);
+  z-index: 50; display: none; align-items: flex-end;
+  justify-content: center;
+}
+.modal-overlay.show { display: flex; }
+.modal-sheet {
+  background: var(--surface); width: 100%; max-width: 480px;
+  border-radius: 20px 20px 0 0; max-height: 80vh;
+  overflow-y: auto; padding: 20px 16px;
+  padding-bottom: calc(20px + var(--safe-bottom));
+  animation: slideUp .2s ease;
+}
+@keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
+.modal-sheet .ms-header {
+  display: flex; align-items: center; justify-content: space-between;
+  margin-bottom: 16px;
+}
+.modal-sheet .ms-title { font-size: 17px; font-weight: 700; }
+.modal-sheet .ms-close {
+  width: 32px; height: 32px; border-radius: 50%;
+  background: var(--bg); font-size: 18px; display: flex;
+  align-items: center; justify-content: center; color: var(--text-secondary);
+}
+
+/* ============================================================
+   Toast
+   ============================================================ */
+.toast {
+  position: fixed; top: 20px; left: 50%; transform: translateX(-50%);
+  background: #1e293b; color: #fff; padding: 12px 24px;
+  border-radius: 24px; font-size: 14px; font-weight: 600;
+  z-index: 100; opacity: 0; transition: opacity .2s;
+  pointer-events: none;
+}
+.toast.show { opacity: 1; }
+
+/* ============================================================
+   Settings / Import
+   ============================================================ */
+.settings-section { margin-top: 20px; }
+.settings-section h3 { font-size: 14px; font-weight: 600; margin-bottom: 8px; color: var(--text-secondary); }
+.settings-section input {
+  width: 100%; height: 40px; background: var(--surface);
+  border-radius: 8px; padding: 0 12px; font-size: 14px;
+  margin-bottom: 6px; box-shadow: var(--shadow);
+}
+.settings-section .inline-row {
+  display: flex; gap: 8px; align-items: center;
+}
+.settings-section .inline-row span { font-size: 13px; color: var(--text-secondary); white-space: nowrap; }
+.settings-section .inline-row input { flex: 1; margin-bottom: 0; }
+
+/* ============================================================
+   Empty State
+   ============================================================ */
+.empty-state {
+  text-align: center; padding: 40px 20px; color: var(--text-secondary);
+}
+.empty-state .empty-icon { font-size: 48px; margin-bottom: 12px; }
+.empty-state .empty-text { font-size: 14px; }
+
+/* Scrollbar */
+::-webkit-scrollbar { width: 0; }
+</style>
+</head>
+<body>
+
+<div class="app">
+  <!-- Header -->
+  <div class="header">
+    <h1 id="headerTitle">📅 健身记录</h1>
+  </div>
+
+  <!-- Main Content -->
+  <div class="main" id="mainContent">
+    <!-- Tab: Calendar -->
+    <div class="tab-panel active" id="tab-calendar"></div>
+
+    <!-- Tab: Training -->
+    <div class="tab-panel" id="tab-training"></div>
+
+    <!-- Tab: Diet -->
+    <div class="tab-panel" id="tab-diet"></div>
+
+    <!-- Tab: Stats -->
+    <div class="tab-panel" id="tab-stats"></div>
+  </div>
+
+  <!-- Bottom Nav -->
+  <div class="nav" id="bottomNav">
+    <div class="nav-item active" data-tab="calendar">
+      <span class="icon">📅</span>
+      <span class="label">日历</span>
+    </div>
+    <div class="nav-item" data-tab="training">
+      <span class="icon">🏋️</span>
+      <span class="label">训练</span>
+    </div>
+    <div class="nav-item" data-tab="diet">
+      <span class="icon">🍽️</span>
+      <span class="label">饮食</span>
+    </div>
+    <div class="nav-item" data-tab="stats">
+      <span class="icon">📊</span>
+      <span class="label">统计</span>
+    </div>
+  </div>
+</div>
+
+<!-- Modal -->
+<div class="modal-overlay" id="modalOverlay">
+  <div class="modal-sheet" id="modalSheet"></div>
+</div>
+
+<!-- Toast -->
+<div class="toast" id="toast"></div>
+
+<script>
+// ============================================================
+// 内联食物营养数据库（原 food-db.js）
+// ============================================================
+const FOOD_DB = [
+  // 主食类
+  { name: "白米饭", kcal: 116, protein: 2.6, carbs: 25.9, fat: 0.3, cat: "主食" },
+  { name: "糙米饭", kcal: 123, protein: 2.7, carbs: 23.0, fat: 1.0, cat: "主食" },
+  { name: "白馒头", kcal: 223, protein: 7.0, carbs: 44.2, fat: 1.1, cat: "主食" },
+  { name: "全麦面包", kcal: 246, protein: 8.5, carbs: 46.0, fat: 3.4, cat: "主食" },
+  { name: "白面包", kcal: 266, protein: 8.0, carbs: 49.0, fat: 3.4, cat: "主食" },
+  { name: "面条(煮)", kcal: 137, protein: 4.5, carbs: 27.0, fat: 0.5, cat: "主食" },
+  { name: "意面(煮)", kcal: 131, protein: 5.0, carbs: 25.0, fat: 1.1, cat: "主食" },
+  { name: "红薯", kcal: 86, protein: 1.6, carbs: 20.1, fat: 0.1, cat: "主食" },
+  { name: "紫薯", kcal: 82, protein: 1.4, carbs: 17.6, fat: 0.2, cat: "主食" },
+  { name: "玉米", kcal: 112, protein: 4.0, carbs: 22.8, fat: 1.2, cat: "主食" },
+  { name: "燕麦片", kcal: 377, protein: 13.5, carbs: 66.3, fat: 6.7, cat: "主食" },
+  { name: "小米粥", kcal: 46, protein: 1.4, carbs: 8.4, fat: 0.7, cat: "主食" },
+  { name: "土豆", kcal: 76, protein: 2.0, carbs: 17.5, fat: 0.2, cat: "主食" },
+  { name: "山药", kcal: 57, protein: 1.9, carbs: 12.4, fat: 0.2, cat: "主食" },
+  { name: "南瓜", kcal: 22, protein: 0.7, carbs: 5.3, fat: 0.1, cat: "主食" },
+  { name: "饺子(煮)", kcal: 210, protein: 7.5, carbs: 30.0, fat: 7.0, cat: "主食" },
+  { name: "包子(猪肉)", kcal: 226, protein: 8.0, carbs: 28.0, fat: 9.0, cat: "主食" },
+  { name: "烧饼", kcal: 326, protein: 8.5, carbs: 55.0, fat: 8.0, cat: "主食" },
+  { name: "油条", kcal: 386, protein: 6.9, carbs: 51.0, fat: 17.6, cat: "主食" },
+  { name: "糯米饭", kcal: 190, protein: 3.5, carbs: 35.0, fat: 4.5, cat: "主食" },
+  // 肉类
+  { name: "鸡胸肉", kcal: 133, protein: 31.0, carbs: 0.0, fat: 1.2, cat: "肉类" },
+  { name: "鸡腿肉", kcal: 181, protein: 20.0, carbs: 0.0, fat: 11.0, cat: "肉类" },
+  { name: "鸡翅", kcal: 194, protein: 17.4, carbs: 0.0, fat: 13.8, cat: "肉类" },
+  { name: "鸡蛋", kcal: 144, protein: 13.3, carbs: 2.8, fat: 8.8, cat: "蛋奶" },
+  { name: "鸡蛋白", kcal: 48, protein: 11.6, carbs: 0.6, fat: 0.1, cat: "蛋奶" },
+  { name: "鸡蛋黄", kcal: 328, protein: 15.2, carbs: 3.4, fat: 28.2, cat: "蛋奶" },
+  { name: "猪瘦肉", kcal: 143, protein: 20.3, carbs: 1.5, fat: 6.2, cat: "肉类" },
+  { name: "猪五花肉", kcal: 395, protein: 12.0, carbs: 0.0, fat: 37.0, cat: "肉类" },
+  { name: "猪排骨", kcal: 264, protein: 18.3, carbs: 0.0, fat: 20.4, cat: "肉类" },
+  { name: "猪蹄", kcal: 260, protein: 22.6, carbs: 0.0, fat: 18.8, cat: "肉类" },
+  { name: "牛肉(瘦)", kcal: 125, protein: 22.0, carbs: 0.2, fat: 4.0, cat: "肉类" },
+  { name: "牛腩", kcal: 280, protein: 17.5, carbs: 0.0, fat: 23.0, cat: "肉类" },
+  { name: "牛腱子", kcal: 123, protein: 21.5, carbs: 0.1, fat: 4.0, cat: "肉类" },
+  { name: "牛排", kcal: 175, protein: 20.0, carbs: 0.0, fat: 10.0, cat: "肉类" },
+  { name: "羊肉", kcal: 203, protein: 19.0, carbs: 0.0, fat: 14.1, cat: "肉类" },
+  { name: "羊排", kcal: 260, protein: 17.0, carbs: 0.0, fat: 21.0, cat: "肉类" },
+  { name: "鸭肉", kcal: 240, protein: 15.5, carbs: 0.2, fat: 19.7, cat: "肉类" },
+  { name: "鹅肉", kcal: 251, protein: 17.9, carbs: 0.0, fat: 19.9, cat: "肉类" },
+  { name: "猪肉肠", kcal: 300, protein: 12.0, carbs: 3.0, fat: 26.0, cat: "肉类" },
+  { name: "培根", kcal: 500, protein: 12.0, carbs: 1.0, fat: 50.0, cat: "肉类" },
+  { name: "火腿", kcal: 240, protein: 16.0, carbs: 2.0, fat: 18.0, cat: "肉类" },
+  { name: "午餐肉", kcal: 290, protein: 10.0, carbs: 5.0, fat: 26.0, cat: "肉类" },
+  // 水产
+  { name: "三文鱼", kcal: 208, protein: 22.0, carbs: 0.0, fat: 13.0, cat: "水产" },
+  { name: "金枪鱼", kcal: 130, protein: 25.0, carbs: 0.0, fat: 3.0, cat: "水产" },
+  { name: "虾仁", kcal: 99, protein: 20.0, carbs: 0.2, fat: 1.5, cat: "水产" },
+  { name: "基围虾", kcal: 87, protein: 18.6, carbs: 0.0, fat: 0.8, cat: "水产" },
+  { name: "龙利鱼", kcal: 85, protein: 17.0, carbs: 0.0, fat: 1.5, cat: "水产" },
+  { name: "鳕鱼", kcal: 82, protein: 18.0, carbs: 0.0, fat: 1.0, cat: "水产" },
+  { name: "鲈鱼", kcal: 105, protein: 18.6, carbs: 0.0, fat: 3.4, cat: "水产" },
+  { name: "带鱼", kcal: 127, protein: 17.7, carbs: 0.0, fat: 4.9, cat: "水产" },
+  { name: "鲫鱼", kcal: 108, protein: 17.1, carbs: 0.0, fat: 2.7, cat: "水产" },
+  { name: "螃蟹", kcal: 95, protein: 13.8, carbs: 2.3, fat: 2.3, cat: "水产" },
+  { name: "蛤蜊", kcal: 62, protein: 10.0, carbs: 2.0, fat: 1.1, cat: "水产" },
+  { name: "牡蛎", kcal: 73, protein: 5.0, carbs: 8.0, fat: 2.0, cat: "水产" },
+  { name: "鱿鱼", kcal: 92, protein: 17.0, carbs: 2.0, fat: 1.5, cat: "水产" },
+  { name: "章鱼", kcal: 82, protein: 14.9, carbs: 2.2, fat: 1.0, cat: "水产" },
+  // 蛋奶
+  { name: "牛奶(全脂)", kcal: 61, protein: 3.0, carbs: 5.0, fat: 3.2, cat: "蛋奶" },
+  { name: "牛奶(脱脂)", kcal: 33, protein: 3.5, carbs: 4.8, fat: 0.1, cat: "蛋奶" },
+  { name: "酸奶(原味)", kcal: 72, protein: 2.5, carbs: 9.3, fat: 2.7, cat: "蛋奶" },
+  { name: "希腊酸奶", kcal: 97, protein: 9.0, carbs: 4.0, fat: 5.0, cat: "蛋奶" },
+  { name: "奶酪", kcal: 328, protein: 25.7, carbs: 3.5, fat: 23.5, cat: "蛋奶" },
+  { name: "芝士片", kcal: 310, protein: 18.0, carbs: 2.0, fat: 25.0, cat: "蛋奶" },
+  { name: "鹌鹑蛋", kcal: 160, protein: 13.0, carbs: 1.0, fat: 11.0, cat: "蛋奶" },
+  { name: "咸鸭蛋", kcal: 190, protein: 12.7, carbs: 2.0, fat: 14.5, cat: "蛋奶" },
+  // 豆制品
+  { name: "豆腐", kcal: 76, protein: 8.1, carbs: 2.0, fat: 3.7, cat: "豆制品" },
+  { name: "老豆腐", kcal: 120, protein: 12.0, carbs: 3.0, fat: 6.0, cat: "豆制品" },
+  { name: "内酯豆腐", kcal: 50, protein: 5.0, carbs: 1.8, fat: 2.5, cat: "豆制品" },
+  { name: "豆浆(无糖)", kcal: 31, protein: 3.0, carbs: 0.8, fat: 1.6, cat: "豆制品" },
+  { name: "豆腐干", kcal: 140, protein: 16.2, carbs: 2.0, fat: 7.5, cat: "豆制品" },
+  { name: "豆腐皮", kcal: 409, protein: 44.6, carbs: 7.2, fat: 21.7, cat: "豆制品" },
+  { name: "腐竹", kcal: 459, protein: 45.0, carbs: 8.0, fat: 26.0, cat: "豆制品" },
+  { name: "毛豆", kcal: 131, protein: 13.1, carbs: 10.5, fat: 5.0, cat: "豆制品" },
+  { name: "黄豆", kcal: 359, protein: 35.0, carbs: 34.2, fat: 16.0, cat: "豆制品" },
+  { name: "豆饼", kcal: 310, protein: 35.0, carbs: 20.0, fat: 10.0, cat: "豆制品" },
+  { name: "红豆", kcal: 324, protein: 20.2, carbs: 60.7, fat: 0.6, cat: "豆制品" },
+  { name: "绿豆", kcal: 329, protein: 21.6, carbs: 62.0, fat: 0.8, cat: "豆制品" },
+  { name: "黑豆", kcal: 381, protein: 36.0, carbs: 33.6, fat: 15.9, cat: "豆制品" },
+  { name: "鹰嘴豆", kcal: 364, protein: 19.3, carbs: 60.6, fat: 6.0, cat: "豆制品" },
+  { name: "扁豆", kcal: 353, protein: 25.8, carbs: 60.1, fat: 1.1, cat: "豆制品" },
+  { name: "豆渣", kcal: 85, protein: 5.0, carbs: 10.0, fat: 2.5, cat: "豆制品" },
+  { name: "豆腐乳", kcal: 130, protein: 10.0, carbs: 4.0, fat: 8.0, cat: "豆制品" },
+  { name: "纳豆", kcal: 200, protein: 16.5, carbs: 13.0, fat: 10.0, cat: "豆制品" },
+  // 蔬菜
+  { name: "西兰花", kcal: 34, protein: 2.8, carbs: 6.6, fat: 0.4, cat: "蔬菜" },
+  { name: "菠菜", kcal: 23, protein: 2.9, carbs: 3.6, fat: 0.4, cat: "蔬菜" },
+  { name: "生菜", kcal: 15, protein: 1.4, carbs: 1.1, fat: 0.4, cat: "蔬菜" },
+  { name: "番茄", kcal: 18, protein: 0.9, carbs: 3.9, fat: 0.2, cat: "蔬菜" },
+  { name: "黄瓜", kcal: 16, protein: 0.7, carbs: 2.9, fat: 0.1, cat: "蔬菜" },
+  { name: "胡萝卜", kcal: 41, protein: 0.9, carbs: 9.6, fat: 0.2, cat: "蔬菜" },
+  { name: "白萝卜", kcal: 21, protein: 0.9, carbs: 4.0, fat: 0.1, cat: "蔬菜" },
+  { name: "白菜", kcal: 13, protein: 1.5, carbs: 2.2, fat: 0.2, cat: "蔬菜" },
+  { name: "卷心菜", kcal: 24, protein: 1.5, carbs: 4.6, fat: 0.2, cat: "蔬菜" },
+  { name: "芹菜", kcal: 16, protein: 0.7, carbs: 3.4, fat: 0.1, cat: "蔬菜" },
+  { name: "蘑菇", kcal: 22, protein: 3.1, carbs: 3.3, fat: 0.3, cat: "蔬菜" },
+  { name: "金针菇", kcal: 26, protein: 2.4, carbs: 4.7, fat: 0.4, cat: "蔬菜" },
+  { name: "香菇", kcal: 34, protein: 2.2, carbs: 6.7, fat: 0.3, cat: "蔬菜" },
+  { name: "青椒", kcal: 20, protein: 0.9, carbs: 4.6, fat: 0.2, cat: "蔬菜" },
+  { name: "茄子", kcal: 21, protein: 1.1, carbs: 4.9, fat: 0.2, cat: "蔬菜" },
+  { name: "豆芽", kcal: 18, protein: 1.6, carbs: 2.6, fat: 0.5, cat: "蔬菜" },
+  { name: "洋葱", kcal: 40, protein: 1.1, carbs: 9.0, fat: 0.1, cat: "蔬菜" },
+  { name: "大蒜", kcal: 126, protein: 4.5, carbs: 27.6, fat: 0.2, cat: "蔬菜" },
+  { name: "秋葵", kcal: 31, protein: 2.0, carbs: 7.0, fat: 0.1, cat: "蔬菜" },
+  { name: "芦笋", kcal: 20, protein: 2.2, carbs: 3.9, fat: 0.1, cat: "蔬菜" },
+  { name: "花菜", kcal: 25, protein: 1.9, carbs: 5.0, fat: 0.3, cat: "蔬菜" },
+  { name: "苦瓜", kcal: 19, protein: 0.8, carbs: 3.5, fat: 0.1, cat: "蔬菜" },
+  { name: "冬瓜", kcal: 12, protein: 0.4, carbs: 2.6, fat: 0.0, cat: "蔬菜" },
+  { name: "莲藕", kcal: 73, protein: 2.6, carbs: 15.2, fat: 0.2, cat: "蔬菜" },
+  { name: "莴笋", kcal: 15, protein: 0.9, carbs: 2.8, fat: 0.1, cat: "蔬菜" },
+  { name: "海带", kcal: 13, protein: 1.2, carbs: 2.4, fat: 0.1, cat: "蔬菜" },
+  { name: "银耳", kcal: 21, protein: 1.8, carbs: 3.4, fat: 0.2, cat: "蔬菜" },
+  { name: "木耳", kcal: 27, protein: 2.2, carbs: 3.7, fat: 0.2, cat: "蔬菜" },
+  { name: "竹笋", kcal: 19, protein: 2.2, carbs: 2.5, fat: 0.2, cat: "蔬菜" },
+  { name: "茭白", kcal: 23, protein: 1.2, carbs: 4.2, fat: 0.2, cat: "蔬菜" },
+  { name: "空心菜", kcal: 20, protein: 2.2, carbs: 3.1, fat: 0.3, cat: "蔬菜" },
+  { name: "韭菜", kcal: 25, protein: 2.4, carbs: 3.2, fat: 0.4, cat: "蔬菜" },
+  { name: "香菜", kcal: 23, protein: 2.0, carbs: 3.7, fat: 0.4, cat: "蔬菜" },
+  { name: "紫菜", kcal: 207, protein: 35.0, carbs: 21.0, fat: 1.6, cat: "蔬菜" },
+  { name: "裙带菜", kcal: 45, protein: 2.5, carbs: 9.0, fat: 0.5, cat: "蔬菜" },
+  // 水果
+  { name: "苹果", kcal: 52, protein: 0.3, carbs: 13.8, fat: 0.2, cat: "水果" },
+  { name: "香蕉", kcal: 89, protein: 1.1, carbs: 22.8, fat: 0.3, cat: "水果" },
+  { name: "橙子", kcal: 47, protein: 0.9, carbs: 11.8, fat: 0.1, cat: "水果" },
+  { name: "葡萄", kcal: 67, protein: 0.6, carbs: 17.1, fat: 0.2, cat: "水果" },
+  { name: "西瓜", kcal: 30, protein: 0.6, carbs: 7.6, fat: 0.1, cat: "水果" },
+  { name: "草莓", kcal: 32, protein: 0.7, carbs: 7.7, fat: 0.3, cat: "水果" },
+  { name: "蓝莓", kcal: 57, protein: 0.7, carbs: 14.5, fat: 0.3, cat: "水果" },
+  { name: "猕猴桃", kcal: 61, protein: 1.1, carbs: 14.7, fat: 0.5, cat: "水果" },
+  { name: "芒果", kcal: 60, protein: 0.8, carbs: 15.0, fat: 0.4, cat: "水果" },
+  { name: "菠萝", kcal: 41, protein: 0.5, carbs: 10.8, fat: 0.1, cat: "水果" },
+  { name: "桃子", kcal: 42, protein: 0.9, carbs: 10.1, fat: 0.1, cat: "水果" },
+  { name: "梨", kcal: 51, protein: 0.4, carbs: 13.1, fat: 0.1, cat: "水果" },
+  { name: "柚子", kcal: 42, protein: 0.8, carbs: 10.7, fat: 0.1, cat: "水果" },
+  { name: "樱桃", kcal: 63, protein: 1.1, carbs: 16.0, fat: 0.2, cat: "水果" },
+  { name: "火龙果", kcal: 55, protein: 1.1, carbs: 13.0, fat: 0.4, cat: "水果" },
+  { name: "榴莲", kcal: 147, protein: 1.5, carbs: 27.1, fat: 3.3, cat: "水果" },
+  { name: "牛油果", kcal: 160, protein: 2.0, carbs: 8.5, fat: 14.7, cat: "水果" },
+  { name: "柠檬", kcal: 37, protein: 0.7, carbs: 6.5, fat: 0.1, cat: "水果" },
+  { name: "荔枝", kcal: 66, protein: 0.8, carbs: 16.5, fat: 0.4, cat: "水果" },
+  { name: "山竹", kcal: 72, protein: 0.4, carbs: 18.0, fat: 0.2, cat: "水果" },
+  { name: "山楂", kcal: 102, protein: 0.7, carbs: 25.1, fat: 0.2, cat: "水果" },
+  { name: "柿子", kcal: 71, protein: 0.5, carbs: 18.5, fat: 0.1, cat: "水果" },
+  { name: "石榴", kcal: 63, protein: 1.3, carbs: 14.5, fat: 0.2, cat: "水果" },
+  { name: "百香果", kcal: 97, protein: 2.2, carbs: 23.4, fat: 0.7, cat: "水果" },
+  { name: "椰子肉", kcal: 354, protein: 3.3, carbs: 15.2, fat: 33.5, cat: "水果" },
+  { name: "枣", kcal: 264, protein: 3.5, carbs: 63.0, fat: 0.5, cat: "水果" },
+  { name: "枇杷", kcal: 38, protein: 0.4, carbs: 8.5, fat: 0.2, cat: "水果" },
+  { name: "杨梅", kcal: 30, protein: 0.6, carbs: 6.7, fat: 0.2, cat: "水果" },
+  { name: "桑葚", kcal: 49, protein: 1.7, carbs: 9.7, fat: 0.4, cat: "水果" },
+  // 坚果
+  { name: "核桃", kcal: 654, protein: 15.2, carbs: 13.7, fat: 65.2, cat: "坚果" },
+  { name: "杏仁", kcal: 579, protein: 21.0, carbs: 21.0, fat: 49.0, cat: "坚果" },
+  { name: "腰果", kcal: 553, protein: 18.0, carbs: 30.0, fat: 44.0, cat: "坚果" },
+  { name: "花生", kcal: 567, protein: 25.8, carbs: 16.1, fat: 49.2, cat: "坚果" },
+  { name: "开心果", kcal: 560, protein: 20.0, carbs: 28.0, fat: 45.0, cat: "坚果" },
+  { name: "瓜子", kcal: 582, protein: 19.3, carbs: 20.0, fat: 49.8, cat: "坚果" },
+  { name: "芝麻", kcal: 573, protein: 20.0, carbs: 23.0, fat: 49.0, cat: "坚果" },
+  { name: "花生酱", kcal: 588, protein: 25.0, carbs: 20.0, fat: 50.0, cat: "坚果" },
+  { name: "栗子", kcal: 224, protein: 4.2, carbs: 46.0, fat: 1.5, cat: "坚果" },
+  { name: "松子", kcal: 673, protein: 13.7, carbs: 14.0, fat: 68.4, cat: "坚果" },
+  { name: "榛子", kcal: 628, protein: 15.0, carbs: 17.0, fat: 61.0, cat: "坚果" },
+  { name: "夏威夷果", kcal: 718, protein: 7.9, carbs: 14.0, fat: 75.8, cat: "坚果" },
+  { name: "奇亚籽", kcal: 486, protein: 16.5, carbs: 42.0, fat: 30.7, cat: "坚果" },
+  { name: "亚麻籽", kcal: 534, protein: 18.3, carbs: 29.0, fat: 42.2, cat: "坚果" },
+  // 零食饮料
+  { name: "巧克力", kcal: 546, protein: 5.0, carbs: 59.0, fat: 31.0, cat: "零食" },
+  { name: "黑巧克力(70%)", kcal: 598, protein: 7.8, carbs: 38.0, fat: 42.6, cat: "零食" },
+  { name: "薯片", kcal: 536, protein: 6.0, carbs: 53.0, fat: 34.0, cat: "零食" },
+  { name: "饼干", kcal: 433, protein: 7.0, carbs: 71.0, fat: 14.0, cat: "零食" },
+  { name: "蛋糕", kcal: 348, protein: 5.0, carbs: 57.0, fat: 12.0, cat: "零食" },
+  { name: "冰淇淋", kcal: 207, protein: 3.5, carbs: 24.0, fat: 11.0, cat: "零食" },
+  { name: "可乐", kcal: 42, protein: 0.0, carbs: 10.6, fat: 0.0, cat: "饮料" },
+  { name: "雪碧", kcal: 41, protein: 0.0, carbs: 10.2, fat: 0.0, cat: "饮料" },
+  { name: "橙汁", kcal: 45, protein: 0.7, carbs: 10.4, fat: 0.2, cat: "饮料" },
+  { name: "苹果汁", kcal: 46, protein: 0.1, carbs: 11.3, fat: 0.1, cat: "饮料" },
+  { name: "啤酒", kcal: 43, protein: 0.5, carbs: 3.6, fat: 0.0, cat: "饮料" },
+  { name: "红酒", kcal: 85, protein: 0.1, carbs: 2.6, fat: 0.0, cat: "饮料" },
+  { name: "白酒", kcal: 250, protein: 0.0, carbs: 0.5, fat: 0.0, cat: "饮料" },
+  { name: "奶茶", kcal: 65, protein: 1.0, carbs: 10.0, fat: 2.5, cat: "饮料" },
+  { name: "拿铁咖啡", kcal: 41, protein: 2.5, carbs: 4.0, fat: 1.8, cat: "饮料" },
+  { name: "美式咖啡", kcal: 2, protein: 0.1, carbs: 0.0, fat: 0.0, cat: "饮料" },
+  { name: "蛋白粉(乳清)", kcal: 380, protein: 80.0, carbs: 5.0, fat: 3.0, cat: "补剂" },
+  { name: "蛋白粉(植物)", kcal: 370, protein: 70.0, carbs: 8.0, fat: 5.0, cat: "补剂" },
+  { name: "蛋白棒", kcal: 370, protein: 30.0, carbs: 38.0, fat: 10.0, cat: "补剂" },
+  { name: "增肌粉", kcal: 390, protein: 25.0, carbs: 60.0, fat: 4.0, cat: "补剂" },
+  { name: "肌酸", kcal: 0, protein: 0.0, carbs: 0.0, fat: 0.0, cat: "补剂" },
+  { name: "能量棒", kcal: 380, protein: 20.0, carbs: 45.0, fat: 12.0, cat: "零食" },
+  { name: "牛肉干", kcal: 320, protein: 45.0, carbs: 5.0, fat: 8.0, cat: "零食" },
+  // 调味品
+  { name: "橄榄油", kcal: 884, protein: 0.0, carbs: 0.0, fat: 100.0, cat: "调味品" },
+  { name: "花生油", kcal: 899, protein: 0.0, carbs: 0.0, fat: 99.9, cat: "调味品" },
+  { name: "黄油", kcal: 717, protein: 0.9, carbs: 0.1, fat: 81.1, cat: "调味品" },
+  { name: "沙拉酱", kcal: 680, protein: 1.0, carbs: 2.0, fat: 75.0, cat: "调味品" },
+  { name: "番茄酱", kcal: 80, protein: 1.7, carbs: 18.0, fat: 0.2, cat: "调味品" },
+  { name: "酱油", kcal: 53, protein: 5.6, carbs: 5.9, fat: 0.0, cat: "调味品" },
+  { name: "醋", kcal: 18, protein: 2.0, carbs: 2.5, fat: 0.0, cat: "调味品" },
+  { name: "盐", kcal: 0, protein: 0.0, carbs: 0.0, fat: 0.0, cat: "调味品" },
+  { name: "糖", kcal: 387, protein: 0.0, carbs: 100.0, fat: 0.0, cat: "调味品" },
+  { name: "蜂蜜", kcal: 304, protein: 0.3, carbs: 82.4, fat: 0.0, cat: "调味品" },
+  // 快餐
+  { name: "炸鸡腿", kcal: 250, protein: 18.0, carbs: 8.0, fat: 16.0, cat: "快餐" },
+  { name: "炸鸡排", kcal: 280, protein: 20.0, carbs: 10.0, fat: 18.0, cat: "快餐" },
+  { name: "汉堡(牛肉)", kcal: 265, protein: 13.0, carbs: 30.0, fat: 10.0, cat: "快餐" },
+  { name: "薯条", kcal: 312, protein: 3.4, carbs: 41.0, fat: 15.0, cat: "快餐" },
+  { name: "披萨", kcal: 266, protein: 11.0, carbs: 33.0, fat: 10.0, cat: "快餐" },
+  { name: "炒饭", kcal: 163, protein: 5.0, carbs: 25.0, fat: 5.0, cat: "快餐" },
+  { name: "炒面", kcal: 180, protein: 6.0, carbs: 28.0, fat: 6.0, cat: "快餐" },
+  { name: "麻辣烫", kcal: 80, protein: 8.0, carbs: 5.0, fat: 3.0, cat: "快餐" },
+  { name: "火锅(肉+菜)", kcal: 130, protein: 12.0, carbs: 2.0, fat: 8.0, cat: "快餐" },
+  { name: "寿司", kcal: 140, protein: 6.0, carbs: 25.0, fat: 2.0, cat: "快餐" },
+  { name: "三明治", kcal: 230, protein: 12.0, carbs: 28.0, fat: 8.0, cat: "快餐" },
+  { name: "鸡肉卷", kcal: 210, protein: 15.0, carbs: 22.0, fat: 7.0, cat: "快餐" },
+  // 中餐
+  { name: "番茄炒蛋", kcal: 104, protein: 5.0, carbs: 4.0, fat: 7.0, cat: "中餐" },
+  { name: "宫保鸡丁", kcal: 165, protein: 18.0, carbs: 6.0, fat: 8.0, cat: "中餐" },
+  { name: "鱼香肉丝", kcal: 150, protein: 10.0, carbs: 8.0, fat: 9.0, cat: "中餐" },
+  { name: "红烧肉", kcal: 300, protein: 12.0, carbs: 5.0, fat: 26.0, cat: "中餐" },
+  { name: "糖醋排骨", kcal: 290, protein: 16.0, carbs: 15.0, fat: 18.0, cat: "中餐" },
+  { name: "麻婆豆腐", kcal: 90, protein: 8.0, carbs: 3.0, fat: 5.0, cat: "中餐" },
+  { name: "清蒸鱼", kcal: 95, protein: 17.0, carbs: 0.5, fat: 3.0, cat: "中餐" },
+  { name: "回锅肉", kcal: 280, protein: 14.0, carbs: 4.0, fat: 23.0, cat: "中餐" },
+  { name: "地三鲜", kcal: 120, protein: 2.0, carbs: 12.0, fat: 7.0, cat: "中餐" },
+  { name: "蒜蓉西兰花", kcal: 45, protein: 3.0, carbs: 5.0, fat: 2.0, cat: "中餐" },
+  { name: "口水鸡", kcal: 200, protein: 20.0, carbs: 2.0, fat: 13.0, cat: "中餐" },
+  { name: "水煮鱼", kcal: 120, protein: 15.0, carbs: 1.0, fat: 6.0, cat: "中餐" },
+  { name: "蛋炒饭", kcal: 170, protein: 5.5, carbs: 26.0, fat: 5.0, cat: "中餐" },
+  { name: "扬州炒饭", kcal: 190, protein: 7.0, carbs: 27.0, fat: 6.5, cat: "中餐" },
+  { name: "白切鸡", kcal: 170, protein: 21.0, carbs: 0.5, fat: 9.0, cat: "中餐" },
+  { name: "烧鹅", kcal: 280, protein: 18.0, carbs: 1.0, fat: 22.0, cat: "中餐" },
+  { name: "叉烧", kcal: 260, protein: 20.0, carbs: 10.0, fat: 16.0, cat: "中餐" },
+  { name: "牛肉面", kcal: 120, protein: 7.0, carbs: 16.0, fat: 3.0, cat: "中餐" },
+  { name: "兰州拉面", kcal: 115, protein: 5.0, carbs: 20.0, fat: 2.0, cat: "中餐" },
+  { name: "煎饼果子", kcal: 230, protein: 8.0, carbs: 30.0, fat: 9.0, cat: "中餐" },
+  { name: "肉夹馍", kcal: 250, protein: 12.0, carbs: 28.0, fat: 10.0, cat: "中餐" },
+  { name: "凉皮", kcal: 120, protein: 3.0, carbs: 25.0, fat: 1.0, cat: "中餐" },
+  { name: "黄焖鸡", kcal: 140, protein: 16.0, carbs: 3.0, fat: 7.0, cat: "中餐" },
+  { name: "酸菜鱼", kcal: 85, protein: 12.0, carbs: 1.5, fat: 3.5, cat: "中餐" },
+  // 补充
+  { name: "鸡肝", kcal: 119, protein: 17.0, carbs: 1.5, fat: 4.8, cat: "肉类" },
+  { name: "猪肝", kcal: 129, protein: 19.3, carbs: 5.0, fat: 3.5, cat: "肉类" },
+  { name: "鸡心", kcal: 152, protein: 16.0, carbs: 0.6, fat: 9.3, cat: "肉类" },
+  { name: "牛舌", kcal: 224, protein: 15.5, carbs: 0.0, fat: 18.0, cat: "肉类" },
+  { name: "羊腰", kcal: 100, protein: 16.0, carbs: 2.5, fat: 3.0, cat: "肉类" },
+  { name: "马鲛鱼", kcal: 140, protein: 21.0, carbs: 0.0, fat: 5.5, cat: "水产" },
+  { name: "黄花鱼", kcal: 99, protein: 17.9, carbs: 0.0, fat: 2.4, cat: "水产" },
+  { name: "鳗鱼", kcal: 310, protein: 18.0, carbs: 0.0, fat: 26.0, cat: "水产" },
+  { name: "沙丁鱼", kcal: 208, protein: 25.0, carbs: 0.0, fat: 11.5, cat: "水产" },
+  { name: "罗非鱼", kcal: 96, protein: 20.0, carbs: 0.0, fat: 1.8, cat: "水产" },
+  { name: "墨鱼", kcal: 83, protein: 15.2, carbs: 1.5, fat: 1.3, cat: "水产" },
+  { name: "海参", kcal: 78, protein: 16.5, carbs: 2.0, fat: 0.2, cat: "水产" },
+  { name: "皮蛋", kcal: 171, protein: 14.2, carbs: 1.3, fat: 11.8, cat: "蛋奶" },
+  { name: "鸭蛋", kcal: 180, protein: 12.6, carbs: 3.1, fat: 13.0, cat: "蛋奶" },
+  { name: "鹅蛋", kcal: 196, protein: 13.9, carbs: 2.0, fat: 14.0, cat: "蛋奶" },
+  { name: "酸奶油", kcal: 193, protein: 2.5, carbs: 4.3, fat: 18.0, cat: "蛋奶" },
+  { name: "奶油奶酪", kcal: 342, protein: 6.0, carbs: 3.0, fat: 34.0, cat: "蛋奶" },
+  { name: "高粱", kcal: 339, protein: 10.3, carbs: 75.0, fat: 3.3, cat: "主食" },
+  { name: "荞麦", kcal: 337, protein: 10.0, carbs: 73.0, fat: 2.5, cat: "主食" },
+  { name: "薏米", kcal: 357, protein: 12.8, carbs: 69.1, fat: 3.3, cat: "主食" },
+  { name: "黑米", kcal: 346, protein: 9.5, carbs: 72.0, fat: 2.5, cat: "主食" },
+  { name: "小米", kcal: 358, protein: 9.0, carbs: 75.0, fat: 3.1, cat: "主食" },
+  { name: "芋头", kcal: 82, protein: 2.2, carbs: 17.0, fat: 0.2, cat: "主食" },
+  { name: "木薯", kcal: 160, protein: 1.4, carbs: 38.0, fat: 0.3, cat: "主食" },
+];
+
+const FOOD_BY_CAT = {};
+FOOD_DB.forEach(f => {
+  if (!FOOD_BY_CAT[f.cat]) FOOD_BY_CAT[f.cat] = [];
+  FOOD_BY_CAT[f.cat].push(f);
+});
+
+function searchFood(query) {
+  const q = query.toLowerCase().trim();
+  if (!q) return [];
+  return FOOD_DB.filter(f => f.name.includes(q) || f.name.toLowerCase().includes(q)).slice(0, 20);
+}
+
+function findFood(name) {
+  return FOOD_DB.find(f => f.name === name);
+}
+
+function calcNutrition(foodName, grams) {
+  const food = findFood(foodName);
+  if (!food) return null;
+  const ratio = grams / 100;
+  return {
+    name: food.name, amount: grams, unit: "g",
+    kcal: Math.round(food.kcal * ratio),
+    protein: +(food.protein * ratio).toFixed(1),
+    carbs: +(food.carbs * ratio).toFixed(1),
+    fat: +(food.fat * ratio).toFixed(1),
+  };
+}
+
+// ============================================================
+// 主应用逻辑
+// ============================================================
+
+// ============================================================
+// App State & Storage
+// ============================================================
+const STORAGE_KEY = 'fitness_tracker_data';
+
+const DEFAULT_DATA = {
+  workouts: [],
+  meals: {},
+  targets: {
+    training: { protein: 85, carbs: 200, fat: 65 },
+    rest: { protein: 85, carbs: 200, fat: 65 }
+  },
+  mealTargets: {
+    training: {
+      breakfast:  { protein: 17, carbs: 30 },
+      postWorkout:{ protein: 17, carbs: 70 },
+      lunch:      { protein: 17, carbs: 40 },
+      dinner:     { protein: 17, carbs: 40 },
+      snack:      { protein: 17, carbs: 20 }
+    },
+    rest: {
+      breakfast:  { protein: 17, carbs: 30 },
+      lunch:      { protein: 26, carbs: 75 },
+      dinner:     { protein: 26, carbs: 75 },
+      snack:      { protein: 17, carbs: 20 }
+    }
+  },
+  bodyWeight: [],
+  customFoods: [],
+  recentFoods: []
+};
+
+// Training-day meal order (includes post-workout), rest-day excludes it
+const MEAL_TYPES_TRAINING = [
+  { key: 'breakfast',   label: '🌅 早餐（练前）' },
+  { key: 'postWorkout', label: '💪 练后餐' },
+  { key: 'lunch',       label: '☀️ 午餐' },
+  { key: 'dinner',      label: '🌙 晚餐' },
+  { key: 'snack',       label: '🍪 零食/夜宵' }
+];
+const MEAL_TYPES_REST = [
+  { key: 'breakfast', label: '🌅 早餐' },
+  { key: 'lunch',     label: '☀️ 午餐' },
+  { key: 'dinner',    label: '🌙 晚餐' },
+  { key: 'snack',     label: '🍪 零食/夜宵' }
+];
+
+let appData = JSON.parse(JSON.stringify(DEFAULT_DATA));
+
+function loadData() {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      appData = { ...JSON.parse(JSON.stringify(DEFAULT_DATA)), ...parsed };
+      if (!appData.targets) appData.targets = JSON.parse(JSON.stringify(DEFAULT_DATA.targets));
+      if (!appData.targets.training) appData.targets.training = { ...DEFAULT_DATA.targets.training };
+      if (!appData.targets.rest) appData.targets.rest = { ...DEFAULT_DATA.targets.rest };
+      if (!appData.mealTargets) appData.mealTargets = JSON.parse(JSON.stringify(DEFAULT_DATA.mealTargets));
+      if (!appData.mealTargets.training) appData.mealTargets.training = { ...DEFAULT_DATA.mealTargets.training };
+      if (!appData.mealTargets.rest) appData.mealTargets.rest = { ...DEFAULT_DATA.mealTargets.rest };
+      if (!appData.bodyWeight) appData.bodyWeight = [];
+      if (!appData.customFoods) appData.customFoods = [];
+      if (!appData.recentFoods) appData.recentFoods = [];
+    }
+  } catch(e) { console.error('Load error:', e); }
+}
+
+// ── Custom Food Helpers ──
+function getAllFoods() {
+  return [...FOOD_DB, ...appData.customFoods];
+}
+
+function customSearchFood(query) {
+  const q = query.toLowerCase().trim();
+  if (!q) return [];
+  return getAllFoods()
+    .filter(f => f.name.includes(q) || f.name.toLowerCase().includes(q))
+    .slice(0, 20);
+}
+
+function customFindFood(name) {
+  return getAllFoods().find(f => f.name === name) || findFood(name);
+}
+
+function customCalcNutrition(foodName, grams) {
+  const food = customFindFood(foodName);
+  if (!food) return null;
+  const ratio = grams / 100;
+  return {
+    name: food.name,
+    amount: grams,
+    unit: "g",
+    kcal: Math.round(food.kcal * ratio),
+    protein: +(food.protein * ratio).toFixed(1),
+    carbs: +(food.carbs * ratio).toFixed(1),
+    fat: +(food.fat * ratio).toFixed(1),
+  };
+}
+
+function addCustomFood(name, kcal, protein, carbs, fat) {
+  // Check if already exists
+  if (customFindFood(name)) return false;
+  const cat = '自定义';
+  appData.customFoods.push({ name, kcal: Number(kcal), protein: Number(protein), carbs: Number(carbs), fat: Number(fat), cat });
+  saveData();
+  return true;
+}
+
+function trackRecentFood(foodName) {
+  appData.recentFoods = appData.recentFoods.filter(f => f !== foodName);
+  appData.recentFoods.unshift(foodName);
+  if (appData.recentFoods.length > 20) appData.recentFoods.pop();
+  saveData();
+}
+
+function saveData() {
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(appData));
+  } catch(e) {
+    showToast('⚠️ 存储空间不足，请导出数据后清理');
+  }
+}
+
+// ── Helpers ──
+function todayStr() { return new Date().toISOString().slice(0,10); }
+function fmtDate(d) { return d.toISOString().slice(0,10); }
+function parseDate(s) { const [y,m,d]=s.split('-').map(Number); return new Date(y,m-1,d); }
+function sameDay(a,b) { return a.slice(0,10) === b.slice(0,10); }
+
+const TYPE_LABELS = { back:'背部', chest:'胸部', legs:'臀腿', swim:'游泳', rest:'休息' };
+const TYPE_COLORS = { back:'var(--color-back)', chest:'var(--color-chest)', legs:'var(--color-legs)', swim:'var(--color-swim)', rest:'var(--color-rest)' };
+const TYPE_CSS = { back:'type-back', chest:'type-chest', legs:'type-legs', swim:'type-swim', rest:'type-rest' };
+
+const EXERCISE_PRESETS = {
+  back: [
+    '引体向上','杠铃划船','坐姿划船','高位下拉','哑铃单臂划船',
+    '直臂下压','面拉','T杆划船','窄握下拉','哑铃弯举'
+  ],
+  chest: [
+    '杠铃卧推','哑铃卧推','上斜卧推','哑铃飞鸟','双杠臂屈伸',
+    '绳索夹胸','俯卧撑','下斜卧推','器械推胸','三头臂屈伸'
+  ],
+  legs: [
+    '深蹲','硬拉','臀推','腿举','保加利亚分腿蹲',
+    '腿弯举','腿屈伸','小腿提踵','罗马尼亚硬拉','哈克深蹲'
+  ],
+  swim: ['自由泳','蛙泳','仰泳','蝶泳','混合泳'],
+  rest: []
+};
+
+function getWorkout(dateStr) {
+  return appData.workouts.find(w => sameDay(w.date, dateStr));
+}
+
+function getWorkoutType(dateStr) {
+  const w = getWorkout(dateStr);
+  return w ? w.type : null;
+}
+
+// ============================================================
+// Toast
+// ============================================================
+let toastTimer;
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => t.classList.remove('show'), 1800);
+}
+
+// ============================================================
+// Calendar Tab
+// ============================================================
+let calYear, calMonth, selectedDay;
+function initCalendar() {
+  const now = new Date();
+  calYear = now.getFullYear();
+  calMonth = now.getMonth() + 1;
+  selectedDay = todayStr();
+}
+
+function renderCalendar() {
+  const container = document.getElementById('tab-calendar');
+  const firstDay = new Date(calYear, calMonth - 1, 1);
+  const lastDay = new Date(calYear, calMonth, 0);
+  const daysInMonth = lastDay.getDate();
+  const startDow = firstDay.getDay();
+  const startIdx = startDow === 0 ? 6 : startDow - 1;
+  const today = todayStr();
+
+  let monthWorkouts = 0;
+  const typeCount = { back:0, chest:0, legs:0, swim:0, rest:0 };
+  for (let d = 1; d <= daysInMonth; d++) {
+    const ds = `${calYear}-${String(calMonth).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+    const type = getWorkoutType(ds);
+    if (type) { monthWorkouts++; typeCount[type] = (typeCount[type]||0)+1; }
+  }
+
+  let html = '';
+
+  // Month nav
+  html += `<div class="cal-header">
+    <button onclick="changeMonth(-1)">◀</button>
+    <span class="month-label">${calYear}年 ${calMonth}月</span>
+    <button onclick="changeMonth(1)">▶</button>
+  </div>`;
+
+  // Summary
+  html += `<div class="cal-summary">
+    <span class="tag">本月训练 <strong>${monthWorkouts}</strong> 次</span>`;
+  for (const [t, c] of Object.entries(typeCount)) {
+    if (c > 0) html += `<span class="tag leg-${t}">${TYPE_LABELS[t]} <strong>${c}</strong></span>`;
+  }
+  html += `</div>`;
+
+  // Weekday headers
+  html += `<div class="cal-weekdays">`;
+  ['一','二','三','四','五','六','日'].forEach(d => { html += `<span>${d}</span>`; });
+  html += `</div>`;
+
+  // Grid
+  html += `<div class="cal-grid">`;
+  for (let i = 0; i < startIdx; i++) {
+    html += `<div class="cal-cell empty"></div>`;
+  }
+  for (let d = 1; d <= daysInMonth; d++) {
+    const ds = `${calYear}-${String(calMonth).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+    const type = getWorkoutType(ds);
+    const isToday = ds === today;
+    const isSel = ds === selectedDay;
+    let cls = 'cal-cell';
+    if (type) cls += ` ${TYPE_CSS[type]}`;
+    if (isToday) cls += ' today';
+    if (isSel) cls += ' selected';
+    html += `<div class="${cls}" onclick="selectDay('${ds}')">${d}</div>`;
+  }
+  html += `</div>`;
+
+  html += `<div class="cal-legend">
+    <span class="leg-back">背</span>
+    <span class="leg-chest">胸</span>
+    <span class="leg-legs">臀腿</span>
+    <span class="leg-swim">游泳</span>
+    <span class="leg-rest">休息</span>
+  </div>`;
+
+  // Draft notice
+  if (hasDraft()) {
+    html += `<div style="margin-top:10px;padding:10px 14px;background:#fef3c7;border-radius:10px;display:flex;align-items:center;justify-content:space-between;font-size:13px;">
+      <span>📝 有未保存的训练草稿（${trainingDate} · ${TYPE_LABELS[trainingType]||trainingType}）</span>
+      <button class="btn btn-primary btn-sm" onclick="switchTab('training')">继续编辑</button>
+    </div>`;
+  }
+
+  // ═══ Selected Day Detail Card ═══
+  html += renderDayDetail(selectedDay);
+
+  container.innerHTML = html;
+}
+
+function selectDay(ds) {
+  selectedDay = ds;
+  renderCalendar();
+}
+
+function changeMonth(delta) {
+  calMonth += delta;
+  if (calMonth > 12) { calMonth = 1; calYear++; }
+  if (calMonth < 1) { calMonth = 12; calYear--; }
+  renderCalendar();
+}
+
+// Render the detail card for a given date
+function renderDayDetail(dateStr) {
+  const workout = getWorkout(dateStr);
+  const type = workout ? workout.type : null;
+  const dayMacros = getDayMacros(dateStr);
+  const dayTarget = getTargetForDate(dateStr);
+  const isToday = dateStr === todayStr();
+  const dateLabel = isToday ? '今天' : dateStr;
+
+  let html = `<div class="stat-card" style="margin-top:14px;">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
+      <span style="font-weight:700;font-size:16px;">📋 ${dateLabel}详情</span>
+      <span style="font-size:12px;color:var(--text-secondary);">${dateStr}</span>
+    </div>`;
+
+  // --- Training section ---
+  html += `<div style="margin-bottom:10px;">`;
+  if (type) {
+    const typeColor = TYPE_COLORS[type];
+    html += `<div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;">
+      <span style="display:inline-block;width:12px;height:12px;border-radius:3px;background:${typeColor};"></span>
+      <span style="font-weight:700;font-size:15px;">${TYPE_LABELS[type]}</span>
+      ${workout.exercises.length > 0 ? `<span style="font-size:12px;color:var(--text-secondary);">${workout.exercises.length}个动作 · ${workout.exercises.reduce((s,ex)=>s+ex.sets.length,0)}组</span>` : ''}
+    </div>`;
+
+    if (workout.exercises.length > 0) {
+      html += `<div style="display:flex;flex-wrap:wrap;gap:6px;">`;
+      workout.exercises.forEach(ex => {
+        const maxSet = ex.sets.reduce((best, s) => {
+          const vol = (s.weight||0) * (s.reps||0);
+          return vol > best.vol ? { weight: s.weight, reps: s.reps, vol } : best;
+        }, { weight: 0, reps: 0, vol: 0 });
+        html += `<div style="background:var(--bg);border-radius:8px;padding:8px 10px;font-size:13px;line-height:1.4;">
+          <div style="font-weight:600;">${ex.name}</div>
+          <div style="color:var(--text-secondary);">${ex.sets.length}组 · 最大 ${maxSet.weight}kg×${maxSet.reps}</div>
+        </div>`;
+      });
+      html += `</div>`;
+    } else {
+      html += `<span style="font-size:13px;color:var(--text-secondary);">${type==='rest' ? '😴 休息，好好恢复' : '🏊 有氧游泳'}</span>`;
+    }
+  } else {
+    html += `<span style="font-size:13px;color:var(--text-secondary);">📝 暂无训练记录</span>`;
+  }
+  html += `</div>`;
+
+  // --- Diet section ---
+  html += `<div style="border-top:1px solid var(--border);padding-top:10px;">
+    <div style="font-weight:700;font-size:14px;margin-bottom:6px;">🍽️ 饮食摄入</div>`;
+  if (dayMacros.kcal > 0) {
+    const targetKcal = dayTarget.protein*4 + dayTarget.carbs*4 + dayTarget.fat*9;
+    const pctP = dayTarget.protein > 0 ? Math.min(100, dayMacros.protein/dayTarget.protein*100) : 0;
+    const pctC = dayTarget.carbs > 0 ? Math.min(100, dayMacros.carbs/dayTarget.carbs*100) : 0;
+    const pctF = dayTarget.fat > 0 ? Math.min(100, dayMacros.fat/dayTarget.fat*100) : 0;
+
+    html += `<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:6px;text-align:center;margin-bottom:8px;">
+      <div style="background:var(--bg);border-radius:8px;padding:8px 4px;">
+        <div style="font-size:18px;font-weight:800;">${dayMacros.kcal}</div>
+        <div style="font-size:10px;color:var(--text-secondary);">/ ${targetKcal} kcal</div>
+      </div>
+      <div style="background:var(--bg);border-radius:8px;padding:8px 4px;">
+        <div style="font-size:18px;font-weight:800;color:${pctP>90?'var(--danger)':'#f59e0b'};">${dayMacros.protein}</div>
+        <div style="font-size:10px;color:var(--text-secondary);">/ ${dayTarget.protein}g 蛋白</div>
+      </div>
+      <div style="background:var(--bg);border-radius:8px;padding:8px 4px;">
+        <div style="font-size:18px;font-weight:800;color:${pctC>90?'var(--danger)':'#f97316'};">${dayMacros.carbs}</div>
+        <div style="font-size:10px;color:var(--text-secondary);">/ ${dayTarget.carbs}g 碳水</div>
+      </div>
+      <div style="background:var(--bg);border-radius:8px;padding:8px 4px;">
+        <div style="font-size:18px;font-weight:800;color:${pctF>90?'var(--danger)':'var(--danger)'};">${dayMacros.fat}</div>
+        <div style="font-size:10px;color:var(--text-secondary);">/ ${dayTarget.fat}g 脂肪</div>
+      </div>
+    </div>`;
+
+    // Mini progress bars
+    [['🥩蛋白', dayMacros.protein, dayTarget.protein, '#f59e0b'],
+     ['🍚碳水', dayMacros.carbs, dayTarget.carbs, '#f97316'],
+     ['🥑脂肪', dayMacros.fat, dayTarget.fat, '#ef4444']].forEach(([label, val, tgt, color]) => {
+      const pct = tgt > 0 ? Math.min(100, val/tgt*100) : 0;
+      html += `<div style="display:flex;align-items:center;gap:6px;margin-bottom:3px;font-size:11px;">
+        <span style="width:40px;text-align:right;">${label}</span>
+        <div style="flex:1;height:12px;background:var(--bg);border-radius:6px;overflow:hidden;">
+          <div style="height:100%;width:${pct}%;background:${color};border-radius:6px;"></div>
+        </div>
+        <span style="width:44px;text-align:right;">${val}/${tgt}g</span>
+      </div>`;
+    });
+  } else {
+    html += `<span style="font-size:13px;color:var(--text-secondary);">📝 暂无饮食记录</span>`;
+  }
+  html += `</div>`;
+
+  // --- Quick actions ---
+  html += `<div style="display:flex;gap:8px;margin-top:12px;border-top:1px solid var(--border);padding-top:10px;">
+    <button class="btn btn-primary btn-sm" onclick="quickEditDay('${dateStr}')">✏️ 编辑训练</button>
+    <button class="btn btn-outline btn-sm" onclick="switchTab('diet');dietDate='${dateStr}';renderDiet();">🍽️ 记录饮食</button>`;
+  if (workout) {
+    html += `<button class="btn btn-sm" style="background:var(--danger-light);color:var(--danger);" onclick="deleteDayWorkout('${dateStr}')">🗑️</button>`;
+  }
+  html += `</div>`;
+
+  html += `</div>`;
+  return html;
+}
+
+// ============================================================
+// Training Tab
+// ============================================================
+let trainingType = 'back';
+let trainingDate = todayStr();
+let trainingExercises = []; // { name, sets: [{weight, reps}] }
+
+// ── Auto-save draft ──
+const DRAFT_KEY = 'fitness_training_draft';
+
+function saveDraft() {
+  const draft = { trainingType, trainingDate, trainingExercises };
+  try { localStorage.setItem(DRAFT_KEY, JSON.stringify(draft)); } catch(e) {}
+}
+
+function loadDraft() {
+  try {
+    const raw = localStorage.getItem(DRAFT_KEY);
+    if (raw) {
+      const draft = JSON.parse(raw);
+      trainingType = draft.trainingType || 'back';
+      trainingDate = draft.trainingDate || todayStr();
+      trainingExercises = draft.trainingExercises || [];
+      return trainingExercises.length > 0 || draft.trainingDate;
+    }
+  } catch(e) {}
+  return false;
+}
+
+function clearDraft() {
+  try { localStorage.removeItem(DRAFT_KEY); } catch(e) {}
+}
+
+function hasDraft() {
+  try { return !!localStorage.getItem(DRAFT_KEY); } catch(e) { return false; }
+}
+
+function renderTraining() {
+  const container = document.getElementById('tab-training');
+  let html = '';
+
+  // Date selector
+  html += `<div style="margin-bottom:12px; display:flex; align-items:center; gap:8px;">
+    <span style="font-weight:600;">📅</span>
+    <input type="date" value="${trainingDate}" onchange="trainingDate=this.value"
+      style="flex:1; height:36px; background:var(--surface); border-radius:8px; padding:0 12px; font-size:14px; box-shadow:var(--shadow);">
+  </div>`;
+
+  // Type selector
+  html += `<div class="type-selector">`;
+  for (const [key, label] of Object.entries(TYPE_LABELS)) {
+    const active = trainingType === key ? ' active' : '';
+    html += `<div class="type-chip${active} type-${key}" onclick="selectTrainingType('${key}')">${label}</div>`;
+  }
+  html += `</div>`;
+
+  // Exercise list
+  if (trainingType !== 'rest') {
+    html += `<div id="exerciseList">`;
+    trainingExercises.forEach((ex, ei) => {
+      html += renderExerciseCard(ex, ei);
+    });
+    html += `</div>`;
+
+    // Add exercise button
+    html += `<div style="margin-top:10px;">
+      <button class="btn btn-outline btn-sm" onclick="showAddExercise()">+ 添加动作</button>
+    </div>`;
+  } else {
+    html += `<div class="empty-state">
+      <div class="empty-icon">😴</div>
+      <div class="empty-text">休息日，好好恢复！</div>
+    </div>`;
+  }
+
+  // Save button
+  html += `<div style="margin-top:16px;">
+    <button class="btn btn-primary btn-block" onclick="saveWorkout()">
+      ✅ 完成训练
+    </button>
+  </div>`;
+
+  // Settings: macro targets (daily + per-meal)
+  html += `<div class="settings-section">
+    <h3>⚙️ 每日总目标</h3>
+    <div class="inline-row">
+      <span>🔥力训日</span>
+      <span style="font-size:12px;">蛋白</span>
+      <input type="number" id="targetTrainProtein" value="${appData.targets.training.protein}" onchange="updateTargets()" style="width:50px;">
+      <span style="font-size:12px;">碳水</span>
+      <input type="number" id="targetTrainCarbs" value="${appData.targets.training.carbs}" onchange="updateTargets()" style="width:50px;">
+      <span style="font-size:12px;">脂肪</span>
+      <input type="number" id="targetTrainFat" value="${appData.targets.training.fat}" onchange="updateTargets()" style="width:50px;">
+    </div>
+    <div class="inline-row">
+      <span>💤休息日</span>
+      <span style="font-size:12px;">蛋白</span>
+      <input type="number" id="targetRestProtein" value="${appData.targets.rest.protein}" onchange="updateTargets()" style="width:50px;">
+      <span style="font-size:12px;">碳水</span>
+      <input type="number" id="targetRestCarbs" value="${appData.targets.rest.carbs}" onchange="updateTargets()" style="width:50px;">
+      <span style="font-size:12px;">脂肪</span>
+      <input type="number" id="targetRestFat" value="${appData.targets.rest.fat}" onchange="updateTargets()" style="width:50px;">
+    </div>
+  </div>`;
+
+  // Per-meal targets
+  function renderMealTargetRow(dayType, mealKey, label) {
+    const mt = appData.mealTargets[dayType][mealKey];
+    return `<div class="inline-row">
+      <span style="width:70px;font-size:12px;">${label}</span>
+      <span style="font-size:11px;">蛋白</span>
+      <input type="number" value="${mt.protein}" onchange="updateMealTarget('${dayType}','${mealKey}','protein',this.value)" style="width:46px;">
+      <span style="font-size:11px;">碳水</span>
+      <input type="number" value="${mt.carbs}" onchange="updateMealTarget('${dayType}','${mealKey}','carbs',this.value)" style="width:46px;">
+    </div>`;
+  }
+
+  html += `<div class="settings-section">
+    <h3>🔥 力训日每餐目标</h3>
+    ${renderMealTargetRow('training','breakfast','🌅早餐')}
+    ${renderMealTargetRow('training','postWorkout','💪练后餐')}
+    ${renderMealTargetRow('training','lunch','☀️午餐')}
+    ${renderMealTargetRow('training','dinner','🌙晚餐')}
+    ${renderMealTargetRow('training','snack','🍪零食')}
+  </div>`;
+
+  html += `<div class="settings-section">
+    <h3>💤 休息日每餐目标</h3>
+    ${renderMealTargetRow('rest','breakfast','🌅早餐')}
+    ${renderMealTargetRow('rest','lunch','☀️午餐')}
+    ${renderMealTargetRow('rest','dinner','🌙晚餐')}
+    ${renderMealTargetRow('rest','snack','🍪零食')}
+  </div>`;
+
+  // Export/Import
+  html += `<div class="settings-section">
+    <h3>💾 数据管理</h3>
+    <button class="btn btn-outline btn-sm" onclick="exportData()">📤 导出数据</button>
+    <button class="btn btn-outline btn-sm" onclick="document.getElementById('importFile').click()" style="margin-left:6px;">📥 导入数据</button>
+    <input type="file" id="importFile" accept=".json" style="display:none" onchange="importData(this)">
+    <button class="btn btn-danger btn-sm" onclick="resetData()" style="margin-left:6px;">🗑️ 重置</button>
+  </div>`;
+
+  container.innerHTML = html;
+}
+
+function renderExerciseCard(ex, idx) {
+  let html = `<div class="exercise-card">
+    <div class="ex-header">
+      <span class="ex-name">${ex.name}</span>
+      <button class="ex-delete" onclick="removeExercise(${idx})">✕</button>
+    </div>`;
+  ex.sets.forEach((s, si) => {
+    html += `<div class="set-row">
+      <span class="set-num">${si+1}</span>
+      <input type="number" placeholder="重量" value="${s.weight||''}"
+        onchange="updateSet(${idx},${si},'weight',this.value)" inputmode="decimal">
+      <span class="unit">kg</span>
+      <span>×</span>
+      <input type="number" placeholder="次数" value="${s.reps||''}"
+        onchange="updateSet(${idx},${si},'reps',this.value)" inputmode="numeric">
+      <span class="unit">次</span>
+      <button class="copy-set" onclick="duplicateSet(${idx},${si})" title="复制此组">📋</button>
+      <button class="del-set" onclick="removeSet(${idx},${si})">✕</button>
+    </div>`;
+  });
+  html += `<button class="add-set-btn" onclick="addSet(${idx})">+ 添加组（自动填充上一组）</button>`;
+  html += `</div>`;
+  return html;
+}
+
+function selectTrainingType(type) {
+  trainingType = type;
+  trainingExercises = [];
+  const presets = EXERCISE_PRESETS[type];
+  if (presets && presets.length > 0) {
+    trainingExercises.push({ name: presets[0], sets: [{ weight: '', reps: '' }] });
+  }
+  saveDraft();
+  renderTraining();
+}
+
+function addSet(ei) {
+  const sets = trainingExercises[ei].sets;
+  const last = sets.length > 0 ? sets[sets.length - 1] : null;
+  const newSet = (last && (last.weight !== '' || last.reps !== ''))
+    ? { weight: last.weight, reps: last.reps }
+    : { weight: '', reps: '' };
+  sets.push(newSet);
+  saveDraft();
+  const list = document.getElementById('exerciseList');
+  if (list) {
+    list.innerHTML = '';
+    trainingExercises.forEach((ex, i) => { list.innerHTML += renderExerciseCard(ex, i); });
+  }
+}
+
+function duplicateSet(ei, si) {
+  const src = trainingExercises[ei].sets[si];
+  const copy = { weight: src.weight, reps: src.reps };
+  trainingExercises[ei].sets.splice(si + 1, 0, copy);
+  saveDraft();
+  const list = document.getElementById('exerciseList');
+  if (list) {
+    list.innerHTML = '';
+    trainingExercises.forEach((ex, i) => { list.innerHTML += renderExerciseCard(ex, i); });
+  }
+}
+
+function removeSet(ei, si) {
+  trainingExercises[ei].sets.splice(si, 1);
+  if (trainingExercises[ei].sets.length === 0) {
+    trainingExercises[ei].sets.push({ weight: '', reps: '' });
+  }
+  saveDraft();
+  const list = document.getElementById('exerciseList');
+  if (list) {
+    list.innerHTML = '';
+    trainingExercises.forEach((ex, i) => { list.innerHTML += renderExerciseCard(ex, i); });
+  }
+}
+
+function updateSet(ei, si, field, value) {
+  trainingExercises[ei].sets[si][field] = value === '' ? '' : Number(value);
+  saveDraft();
+}
+
+function removeExercise(ei) {
+  trainingExercises.splice(ei, 1);
+  if (trainingExercises.length === 0) {
+    const presets = EXERCISE_PRESETS[trainingType];
+    if (presets && presets.length > 0) {
+      trainingExercises.push({ name: presets[0], sets: [{ weight: '', reps: '' }] });
+    }
+  }
+  saveDraft();
+  renderTraining();
+}
+
+function showAddExercise() {
+  const presets = EXERCISE_PRESETS[trainingType] || [];
+  let options = presets.map(p => `<option value="${p}">${p}</option>`).join('');
+  const existingNames = trainingExercises.map(e => e.name);
+
+  const modal = document.getElementById('modalSheet');
+  modal.innerHTML = `
+    <div class="ms-header">
+      <span class="ms-title">添加动作</span>
+      <button class="ms-close" onclick="closeModal()">✕</button>
+    </div>
+    <p style="font-size:13px;color:var(--text-secondary);margin-bottom:8px;">预设动作（${TYPE_LABELS[trainingType]}）</p>
+    <div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:12px;">
+      ${presets.filter(p => !existingNames.includes(p)).map(p => `
+        <button class="btn btn-outline btn-sm" onclick="addPresetExercise('${p}')">${p}</button>
+      `).join('')}
+    </div>
+    <p style="font-size:13px;color:var(--text-secondary);margin-bottom:8px;">自定义动作</p>
+    <div style="display:flex;gap:8px;">
+      <input id="customExName" placeholder="输入动作名称" style="flex:1;height:40px;background:var(--bg);border-radius:8px;padding:0 12px;">
+      <button class="btn btn-primary btn-sm" onclick="addCustomExercise()">添加</button>
+    </div>
+  `;
+  openModal();
+}
+
+function addPresetExercise(name) {
+  trainingExercises.push({ name, sets: [{ weight: '', reps: '' }] });
+  saveDraft();
+  closeModal();
+  renderTraining();
+}
+
+function addCustomExercise() {
+  const name = document.getElementById('customExName').value.trim();
+  if (!name) { showToast('请输入动作名称'); return; }
+  trainingExercises.push({ name, sets: [{ weight: '', reps: '' }] });
+  saveDraft();
+  closeModal();
+  renderTraining();
+}
+
+function saveWorkout() {
+  // Filter out empty sets
+  const validExercises = trainingExercises.map(ex => ({
+    name: ex.name,
+    sets: ex.sets.filter(s => s.weight !== '' && s.reps !== '').map(s => ({
+      weight: Number(s.weight), reps: Number(s.reps)
+    }))
+  })).filter(ex => ex.sets.length > 0);
+
+  if (validExercises.length === 0 && !['rest','swim'].includes(trainingType)) {
+    showToast('⚠️ 请至少完成一组训练');
+    return;
+  }
+
+  // Remove existing workout on same date
+  appData.workouts = appData.workouts.filter(w => !sameDay(w.date, trainingDate));
+
+  appData.workouts.push({
+    date: trainingDate,
+    type: trainingType,
+    exercises: validExercises
+  });
+
+  // Sort by date desc
+  appData.workouts.sort((a, b) => b.date.localeCompare(a.date));
+
+  saveData();
+  clearDraft();
+  showToast('✅ 训练已保存！');
+  renderCalendar();
+  renderStats();
+}
+
+function updateTargets() {
+  appData.targets.training.protein = Number(document.getElementById('targetTrainProtein').value) || 0;
+  appData.targets.training.carbs = Number(document.getElementById('targetTrainCarbs').value) || 0;
+  appData.targets.training.fat = Number(document.getElementById('targetTrainFat').value) || 0;
+  appData.targets.rest.protein = Number(document.getElementById('targetRestProtein').value) || 0;
+  appData.targets.rest.carbs = Number(document.getElementById('targetRestCarbs').value) || 0;
+  appData.targets.rest.fat = Number(document.getElementById('targetRestFat').value) || 0;
+  saveData();
+  showToast('✅ 目标已更新');
+  renderDiet();
+}
+
+function updateMealTarget(dayType, mealKey, field, value) {
+  if (!appData.mealTargets[dayType]) appData.mealTargets[dayType] = {};
+  if (!appData.mealTargets[dayType][mealKey]) appData.mealTargets[dayType][mealKey] = { protein: 0, carbs: 0 };
+  appData.mealTargets[dayType][mealKey][field] = Number(value) || 0;
+  // Auto-update daily totals from per-meal sums
+  const meals = appData.mealTargets[dayType];
+  let totalProtein = 0, totalCarbs = 0;
+  Object.values(meals).forEach(m => { totalProtein += m.protein || 0; totalCarbs += m.carbs || 0; });
+  appData.targets[dayType].protein = totalProtein;
+  appData.targets[dayType].carbs = totalCarbs;
+  saveData();
+  renderDiet();
+}
+
+// ============================================================
+// Day Detail Modal
+// ============================================================
+function openDayDetail(dateStr) {
+  const workout = getWorkout(dateStr);
+  const type = workout ? workout.type : null;
+  const modal = document.getElementById('modalSheet');
+
+  let html = `
+    <div class="ms-header">
+      <span class="ms-title">${dateStr}</span>
+      <button class="ms-close" onclick="closeModal()">✕</button>
+    </div>
+    <div style="margin-bottom:12px; display:flex; gap:8px; align-items:center;">
+      <span style="font-size:13px; color:var(--text-secondary);">训练类型：</span>
+      <select id="detailType" style="height:36px;background:var(--bg);border-radius:8px;padding:0 12px;font-size:14px;">
+        ${Object.entries(TYPE_LABELS).map(([k,v]) => `<option value="${k}" ${type===k?'selected':''}>${v}</option>`).join('')}
+      </select>
+    </div>`;
+
+  if (workout && workout.exercises.length > 0) {
+    html += `<div style="margin-bottom:12px;">`;
+    workout.exercises.forEach((ex, i) => {
+      html += `<div class="exercise-card">
+        <div class="ex-header"><span class="ex-name">${ex.name}</span></div>`;
+      ex.sets.forEach((s, si) => {
+        html += `<div class="set-row">
+          <span class="set-num">${si+1}</span>
+          <span style="width:64px;text-align:center;font-weight:600;">${s.weight} kg</span>
+          <span>×</span>
+          <span style="width:64px;text-align:center;font-weight:600;">${s.reps} 次</span>
+        </div>`;
+      });
+      html += `</div>`;
+    });
+    html += `</div>`;
+  } else if (!workout || (workout.type === 'rest')) {
+    html += `<div class="empty-state"><div class="empty-icon">${type==='rest' ? '😴' : '📝'}</div>
+      <div class="empty-text">${type==='rest' ? '休息日' : '暂无训练记录'}</div></div>`;
+  }
+
+  // Diet summary for this day
+  const dayMeals = getDayMeals(dateStr);
+  const dayMacros = getDayMacros(dateStr);
+  const dayTarget = getTargetForDate(dateStr);
+  if (dayMacros.kcal > 0) {
+    html += `<div style="margin-top:12px; padding:12px; background:var(--bg); border-radius:10px;">
+      <div style="font-weight:700; font-size:14px; margin-bottom:8px;">🍽️ 当日饮食</div>
+      <div style="display:grid; grid-template-columns:repeat(2,1fr); gap:6px; font-size:13px;">
+        <div>🔥 ${dayMacros.kcal} / ${dayTarget.protein*4 + dayTarget.carbs*4 + dayTarget.fat*9} kcal</div>
+        <div>🥩 ${dayMacros.protein} / ${dayTarget.protein}g</div>
+        <div>🍚 ${dayMacros.carbs} / ${dayTarget.carbs}g</div>
+        <div>🥑 ${dayMacros.fat} / ${dayTarget.fat}g</div>
+      </div>
+    </div>`;
+  }
+
+  // Quick actions
+  html += `<div class="btn-row" style="margin-top:12px;">
+    <button class="btn btn-primary" onclick="quickEditDay('${dateStr}')">✏️ 编辑训练</button>
+    <button class="btn btn-outline" onclick="closeModal();switchTab('diet');dietDate='${dateStr}';renderDiet();">🍽️ 记录饮食</button>`;
+  if (workout) {
+    html += `<button class="btn btn-danger" onclick="deleteDayWorkout('${dateStr}')">🗑️ 删除</button>`;
+  }
+  html += `</div>`;
+
+  modal.innerHTML = html;
+  openModal();
+}
+
+function quickEditDay(dateStr) {
+  const existing = getWorkout(dateStr);
+  const typeSelect = document.getElementById('detailType');
+  trainingType = (existing && existing.type) || (typeSelect ? typeSelect.value : 'back');
+  trainingDate = dateStr;
+  if (existing && existing.exercises && existing.exercises.length > 0) {
+    trainingExercises = JSON.parse(JSON.stringify(existing.exercises));
+  } else {
+    const presets = EXERCISE_PRESETS[trainingType];
+    trainingExercises = presets && presets.length > 0
+      ? [{ name: presets[0], sets: [{ weight: '', reps: '' }] }]
+      : [];
+  }
+  saveDraft();
+  switchTab('training');
+  renderTraining();
+}
+
+function deleteDayWorkout(dateStr) {
+  if (!confirm(`确认删除 ${dateStr} 的训练记录？`)) return;
+  appData.workouts = appData.workouts.filter(w => !sameDay(w.date, dateStr));
+  saveData();
+  closeModal();
+  renderCalendar();
+  renderStats();
+  showToast('已删除');
+}
+
+// ============================================================
+// Modal
+// ============================================================
+function openModal() {
+  document.getElementById('modalOverlay').classList.add('show');
+}
+function closeModal() {
+  document.getElementById('modalOverlay').classList.remove('show');
+}
+document.getElementById('modalOverlay').addEventListener('click', function(e) {
+  if (e.target === this) closeModal();
+});
+
+// ============================================================
+// Diet Tab
+// ============================================================
+let dietDate = todayStr();
+let dietSearchQuery = '';
+let selectedFood = null;
+let selectedMealType = 'breakfast';
+
+function getDayMeals(dateStr) {
+  return appData.meals[dateStr] || [];
+}
+
+function getDayMacros(dateStr) {
+  const meals = getDayMeals(dateStr);
+  let protein = 0, carbs = 0, fat = 0, kcal = 0;
+  meals.forEach(m => {
+    m.foods.forEach(f => {
+      protein += f.protein || 0;
+      carbs += f.carbs || 0;
+      fat += f.fat || 0;
+      kcal += f.kcal || 0;
+    });
+  });
+  return { protein: +protein.toFixed(1), carbs: +carbs.toFixed(1), fat: +fat.toFixed(1), kcal: Math.round(kcal) };
+}
+
+function isTrainingDay(dateStr) {
+  const w = getWorkoutType(dateStr);
+  return w && ['back','chest','legs'].includes(w);
+}
+
+function getTargetForDate(dateStr) {
+  return isTrainingDay(dateStr) ? appData.targets.training : appData.targets.rest;
+}
+
+function getMealTargetsForDate(dateStr) {
+  return isTrainingDay(dateStr) ? appData.mealTargets.training : appData.mealTargets.rest;
+}
+
+function getMealTypesForDate(dateStr) {
+  // Always show all meal types from both training and rest, deduplicated
+  const all = [...MEAL_TYPES_TRAINING];
+  MEAL_TYPES_REST.forEach(mt => {
+    if (!all.find(a => a.key === mt.key)) all.push(mt);
+  });
+  return all;
+}
+
+function renderDiet() {
+  const container = document.getElementById('tab-diet');
+  const macros = getDayMacros(dietDate);
+  const target = getTargetForDate(dietDate);
+  const meals = getDayMeals(dietDate);
+  const isTrainingDay = getWorkoutType(dietDate) && ['back','chest','legs'].includes(getWorkoutType(dietDate));
+
+  const pctP = target.protein > 0 ? Math.min(100, macros.protein / target.protein * 100) : 0;
+  const pctC = target.carbs > 0 ? Math.min(100, macros.carbs / target.carbs * 100) : 0;
+  const pctF = target.fat > 0 ? Math.min(100, macros.fat / target.fat * 100) : 0;
+
+  // Color coding for progress
+  function barColor(pct) {
+    if (pct > 110) return '#ef4444';
+    if (pct > 90) return '#f59e0b';
+    return '';
+  }
+
+  let html = '';
+
+  // Date selector
+  html += `<div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;">
+    <input type="date" value="${dietDate}" onchange="dietDate=this.value;renderDiet()"
+      style="flex:1;height:36px;background:var(--surface);border-radius:8px;padding:0 12px;font-size:14px;box-shadow:var(--shadow);">
+    <span style="font-size:12px;font-weight:600;color:${isTrainingDay?'var(--primary)':'var(--text-secondary)'};white-space:nowrap;">
+      ${isTrainingDay ? '🔥 力训日' : '💤 休息日'}
+    </span>
+  </div>`;
+
+  // Macro bars
+  html += `<div class="macro-bars">
+    <div class="macro-bar-row">
+      <span class="m-label">🥩蛋白</span>
+      <div class="m-bar-wrap"><div class="m-bar-fill m-bar-protein" style="width:${pctP}%;background:${barColor(pctP)||'#f59e0b'}"></div></div>
+      <span class="m-nums">${macros.protein}/${target.protein}g</span>
+    </div>
+    <div class="macro-bar-row">
+      <span class="m-label">🍚碳水</span>
+      <div class="m-bar-wrap"><div class="m-bar-fill m-bar-carbs" style="width:${pctC}%;background:${barColor(pctC)||'#f97316'}"></div></div>
+      <span class="m-nums">${macros.carbs}/${target.carbs}g</span>
+    </div>
+    <div class="macro-bar-row">
+      <span class="m-label">🥑脂肪</span>
+      <div class="m-bar-wrap"><div class="m-bar-fill m-bar-fat" style="width:${pctF}%;background:${barColor(pctF)||'#ef4444'}"></div></div>
+      <span class="m-nums">${macros.fat}/${target.fat}g</span>
+    </div>
+  </div>`;
+
+  // Daily kcal
+  const targetKcal = target.protein * 4 + target.carbs * 4 + target.fat * 9;
+  html += `<div class="daily-kcal">
+    <div class="kcal-num">${macros.kcal} <span style="font-size:14px;color:var(--text-secondary);">/ ${targetKcal} kcal</span></div>
+    <div class="kcal-label">今日摄入 / 目标热量</div>
+  </div>`;
+
+  // Meals list with per-meal targets
+  const mealTargets = getMealTargetsForDate(dietDate);
+  const mealTypesForDay = getMealTypesForDate(dietDate);
+
+  mealTypesForDay.forEach(mt => {
+    const mealFoods = meals.filter(m => m.type === mt.key).flatMap(m => m.foods);
+    const mtgt = mealTargets[mt.key] || { protein: 0, carbs: 0 };
+    let mProtein = 0, mCarbs = 0, mFat = 0, mKcal = 0;
+    mealFoods.forEach(f => { mProtein += f.protein||0; mCarbs += f.carbs||0; mFat += f.fat||0; mKcal += f.kcal||0; });
+    const pProtein = mtgt.protein > 0 ? Math.min(100, mProtein/mtgt.protein*100) : 0;
+    const pCarbs = mtgt.carbs > 0 ? Math.min(100, mCarbs/mtgt.carbs*100) : 0;
+    const pColor = (p) => p > 100 ? 'var(--danger)' : p > 80 ? 'var(--warning)' : 'var(--success)';
+
+    html += `<div class="meal-section" style="margin-bottom:10px;background:var(--surface);border-radius:var(--radius);padding:10px 14px;box-shadow:var(--shadow);">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">
+        <span style="font-weight:700;font-size:14px;">${mt.label}</span>
+        <span style="font-size:11px;color:var(--text-secondary);">
+          🎯 碳水<span style="font-weight:700;color:var(--text);">${mtgt.carbs}g</span> · 蛋白<span style="font-weight:700;color:var(--text);">${mtgt.protein}g</span>
+        </span>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:4px 10px;margin-bottom:4px;">
+        <div style="display:flex;align-items:center;gap:4px;font-size:11px;">
+          <span style="width:32px;color:var(--text-secondary);">🥩蛋白</span>
+          <div style="flex:1;height:8px;background:var(--bg);border-radius:4px;overflow:hidden;">
+            <div style="height:100%;width:${pProtein}%;background:${pColor(pProtein)};border-radius:4px;"></div>
+          </div>
+          <span style="width:44px;text-align:right;font-weight:600;">${mProtein.toFixed(1)}/${mtgt.protein}g</span>
+        </div>
+        <div style="display:flex;align-items:center;gap:4px;font-size:11px;">
+          <span style="width:32px;color:var(--text-secondary);">🍚碳水</span>
+          <div style="flex:1;height:8px;background:var(--bg);border-radius:4px;overflow:hidden;">
+            <div style="height:100%;width:${pCarbs}%;background:${pColor(pCarbs)};border-radius:4px;"></div>
+          </div>
+          <span style="width:44px;text-align:right;font-weight:600;">${mCarbs.toFixed(1)}/${mtgt.carbs}g</span>
+        </div>
+      </div>`;
+    if (mealFoods.length === 0) {
+      html += `<div style="font-size:11px;color:var(--text-secondary);padding:2px 0;">暂无记录</div>`;
+    } else {
+      mealFoods.forEach((f, fi) => {
+        html += `<div class="meal-item" style="padding:6px 0;margin-bottom:0;box-shadow:none;border-bottom:1px solid var(--border);">
+          <div class="mi-info">
+            <div style="display:flex;align-items:center;gap:8px;">
+              <span style="font-weight:600;font-size:13px;">${f.name}</span>
+              <span style="font-size:11px;color:var(--text-secondary);">${f.amount}${f.unit||'g'}</span>
+            </div>
+            <div style="font-size:10px;color:var(--text-secondary);">🔥${f.kcal||0}kcal · 🥩${f.protein||0}g · 🍚${f.carbs||0}g · 🥑${f.fat||0}g</div>
+          </div>
+          <button class="mi-del" onclick="deleteMealFood('${mt.key}',${fi})" style="font-size:14px;">✕</button>
+        </div>`;
+      });
+    }
+    html += `</div>`;
+  });
+
+  // Recent foods
+  if (appData.recentFoods && appData.recentFoods.length > 0) {
+    html += `<div style="margin-top:14px;">
+      <div style="font-size:12px;font-weight:600;color:var(--text-secondary);margin-bottom:6px;">🕐 最近使用</div>
+      <div style="display:flex;flex-wrap:wrap;gap:6px;">`;
+    appData.recentFoods.slice(0, 8).forEach(name => {
+      const f = customFindFood(name);
+      if (f) {
+        html += `<button class="btn btn-outline btn-sm" onclick="selectFoodForAdd('${f.name}');document.getElementById('foodAmount').focus();" style="font-size:11px;">${f.name}</button>`;
+      }
+    });
+    html += `</div></div>`;
+  }
+
+  // Food search
+  html += `<div style="position:relative;margin-top:14px;">
+    <div class="food-search">
+      <input type="text" id="foodSearchInput" placeholder="🔍 搜索食物（搜不到可添加自定义食物）..."
+        oninput="onFoodSearch(this.value)" onfocus="onFoodSearch(this.value)" autocomplete="off">
+      <span class="search-icon">🔍</span>
+    </div>
+    <div class="search-results" id="searchResults"></div>
+  </div>`;
+
+  // Food add form (hidden by default) - dynamic meal types
+  const mealOpts = mealTypesForDay.map(mt => `<option value="${mt.key}">${mt.label}</option>`).join('');
+  html += `<div class="food-add-form" id="foodAddForm">
+    <div class="form-row">
+      <span style="font-weight:600;flex-shrink:0;" id="selectedFoodName">—</span>
+    </div>
+    <div class="form-row">
+      <input type="number" id="foodAmount" placeholder="克数 (g)" value="100" inputmode="decimal" min="1">
+      <select id="mealTypeSelect">${mealOpts}</select>
+    </div>
+    <div class="form-row">
+      <button class="btn btn-primary btn-sm" onclick="addFoodToMeal()">✅ 添加到饮食记录</button>
+      <button class="btn btn-outline btn-sm" onclick="cancelFoodAdd()">取消</button>
+    </div>
+  </div>`;
+
+  // Custom food management
+  if (appData.customFoods && appData.customFoods.length > 0) {
+    html += `<div style="margin-top:16px;">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">
+        <span style="font-size:12px;font-weight:600;color:var(--text-secondary);">⚙️ 自定义食物 (${appData.customFoods.length}个)</span>
+        <button class="btn btn-outline btn-sm" onclick="showCustomFoodManager()" style="font-size:11px;">管理</button>
+      </div>
+    </div>`;
+  }
+
+  // Claude photo mode note
+  html += `<div style="margin-top:20px;padding:14px;background:var(--warning-light);border-radius:var(--radius);">
+    <div style="font-weight:700;font-size:14px;margin-bottom:4px;">📸 Claude 拍照分析</div>
+    <div style="font-size:12px;color:var(--text-secondary);line-height:1.6;">
+      在 Claude Code 中发送食物照片 → Claude 识别食物并计算 macros → 对比你的当日目标 → 提醒补充或减少 → 一键录入饮食记录。
+    </div>
+  </div>`;
+
+  container.innerHTML = html;
+}
+
+let _searchCloseHandler = null;
+
+function onFoodSearch(query) {
+  if (!query || query.trim().length === 0) {
+    document.getElementById('searchResults').classList.remove('show');
+    return;
+  }
+  const results = customSearchFood(query.trim());
+  const sr = document.getElementById('searchResults');
+  let html = '';
+
+  if (results.length === 0) {
+    html += '<div style="padding:12px;font-size:13px;color:var(--text-secondary);">未找到匹配食物</div>';
+  } else {
+    results.forEach(f => {
+      const isCustom = f.cat === '自定义';
+      html += `<div class="sr-item" onmousedown="event.preventDefault();selectFoodForAdd('${f.name}')" ontouchstart="event.preventDefault();selectFoodForAdd('${f.name}')">
+        <span class="sr-name">${f.name}${isCustom ? ' <span style="font-size:10px;color:var(--primary);">[自定义]</span>' : ''}</span>
+        <span class="sr-macros">🔥${f.kcal} | 🥩${f.protein}g | 🍚${f.carbs}g | 🥑${f.fat}g /100g</span>
+      </div>`;
+    });
+  }
+
+  // Always show "add custom food" option
+  html += `<div class="sr-item" onmousedown="event.preventDefault();showCustomFoodForm('${query.trim()}')" ontouchstart="event.preventDefault();showCustomFoodForm('${query.trim()}')"
+    style="background:var(--primary-light);color:var(--primary);font-weight:600;justify-content:center;">
+    ＋ 添加自定义食物「${query.trim()}」
+  </div>`;
+
+  sr.innerHTML = html;
+  sr.classList.add('show');
+
+  // Cleanup old handler
+  if (_searchCloseHandler) {
+    document.removeEventListener('mousedown', _searchCloseHandler);
+    document.removeEventListener('touchstart', _searchCloseHandler);
+  }
+
+  // Close search results when clicking outside
+  _searchCloseHandler = function(e) {
+    const sr = document.getElementById('searchResults');
+    const input = document.getElementById('foodSearchInput');
+    if (sr && !sr.contains(e.target) && e.target !== input) {
+      sr.classList.remove('show');
+      document.removeEventListener('mousedown', _searchCloseHandler);
+      document.removeEventListener('touchstart', _searchCloseHandler);
+      _searchCloseHandler = null;
+    }
+  };
+  document.addEventListener('mousedown', _searchCloseHandler);
+  document.addEventListener('touchstart', _searchCloseHandler);
+}
+
+// Show custom food creation form
+function showCustomFoodForm(name) {
+  document.getElementById('searchResults').classList.remove('show');
+  const modal = document.getElementById('modalSheet');
+  modal.innerHTML = `
+    <div class="ms-header">
+      <span class="ms-title">＋ 添加自定义食物</span>
+      <button class="ms-close" onclick="closeModal()">✕</button>
+    </div>
+    <div style="margin-bottom:10px;">
+      <label style="font-size:12px;color:var(--text-secondary);">食物名称</label>
+      <input id="cfName" value="${name}" style="width:100%;height:40px;background:var(--bg);border-radius:8px;padding:0 12px;font-size:14px;margin-top:4px;">
+    </div>
+    <p style="font-size:12px;color:var(--text-secondary);margin-bottom:8px;">每 100g 营养成分</p>
+    <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:8px;margin-bottom:12px;">
+      <div><label style="font-size:11px;color:var(--text-secondary);">热量 (kcal)</label>
+        <input id="cfKcal" type="number" placeholder="例如 310" style="width:100%;height:40px;background:var(--bg);border-radius:8px;padding:0 12px;margin-top:2px;" inputmode="decimal"></div>
+      <div><label style="font-size:11px;color:var(--text-secondary);">蛋白质 (g)</label>
+        <input id="cfProtein" type="number" placeholder="例如 35" style="width:100%;height:40px;background:var(--bg);border-radius:8px;padding:0 12px;margin-top:2px;" inputmode="decimal"></div>
+      <div><label style="font-size:11px;color:var(--text-secondary);">碳水 (g)</label>
+        <input id="cfCarbs" type="number" placeholder="例如 20" style="width:100%;height:40px;background:var(--bg);border-radius:8px;padding:0 12px;margin-top:2px;" inputmode="decimal"></div>
+      <div><label style="font-size:11px;color:var(--text-secondary);">脂肪 (g)</label>
+        <input id="cfFat" type="number" placeholder="例如 10" style="width:100%;height:40px;background:var(--bg);border-radius:8px;padding:0 12px;margin-top:2px;" inputmode="decimal"></div>
+    </div>
+    <button class="btn btn-primary btn-block" onclick="saveCustomFood()">💾 保存并添加到饮食记录</button>
+    <button class="btn btn-outline btn-block" style="margin-top:8px;" onclick="saveCustomFoodOnly()">💾 仅保存食物（暂不添加）</button>
+    <div style="font-size:11px;color:var(--text-secondary);margin-top:8px;text-align:center;">
+      保存后可在搜索中找到此食物，下次无需重新输入
+    </div>
+  `;
+  openModal();
+}
+
+function saveCustomFood() {
+  const name = document.getElementById('cfName').value.trim();
+  const kcal = Number(document.getElementById('cfKcal').value);
+  const protein = Number(document.getElementById('cfProtein').value);
+  const carbs = Number(document.getElementById('cfCarbs').value);
+  const fat = Number(document.getElementById('cfFat').value);
+
+  if (!name) { showToast('请输入食物名称'); return; }
+  if (!kcal && !protein && !carbs && !fat) { showToast('请至少填写一项营养数据'); return; }
+
+  addCustomFood(name, kcal || 0, protein || 0, carbs || 0, fat || 0);
+  closeModal();
+  // Auto-select for adding to meal
+  selectedFood = customFindFood(name);
+  document.getElementById('foodSearchInput').value = name;
+  document.getElementById('foodAddForm').classList.add('show');
+  document.getElementById('selectedFoodName').textContent = name + ` (🔥${selectedFood.kcal} | 🥩${selectedFood.protein}g | 🍚${selectedFood.carbs}g | 🥑${selectedFood.fat}g /100g)`;
+  showToast('✅ 自定义食物已保存');
+}
+
+function saveCustomFoodOnly() {
+  const name = document.getElementById('cfName').value.trim();
+  const kcal = Number(document.getElementById('cfKcal').value);
+  const protein = Number(document.getElementById('cfProtein').value);
+  const carbs = Number(document.getElementById('cfCarbs').value);
+  const fat = Number(document.getElementById('cfFat').value);
+
+  if (!name) { showToast('请输入食物名称'); return; }
+  if (!kcal && !protein && !carbs && !fat) { showToast('请至少填写一项营养数据'); return; }
+
+  if (!addCustomFood(name, kcal || 0, protein || 0, carbs || 0, fat || 0)) {
+    showToast('⚠️ 该食物名称已存在');
+  } else {
+    closeModal();
+    showToast('✅ 食物已保存，下次搜索即可找到');
+  }
+}
+
+// ── Custom Food Manager (edit/delete) ──
+function showCustomFoodManager() {
+  const modal = document.getElementById('modalSheet');
+  let html = `
+    <div class="ms-header">
+      <span class="ms-title">⚙️ 管理自定义食物</span>
+      <button class="ms-close" onclick="closeModal();renderDiet();">✕</button>
+    </div>`;
+
+  if (appData.customFoods.length === 0) {
+    html += `<div class="empty-state"><div class="empty-text">暂无自定义食物</div></div>`;
+  } else {
+    appData.customFoods.forEach((f, i) => {
+      html += `
+      <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--border);">
+        <div style="flex:1;">
+          <div style="font-weight:600;">${f.name}</div>
+          <div style="font-size:11px;color:var(--text-secondary);">🔥${f.kcal} | 🥩${f.protein}g | 🍚${f.carbs}g | 🥑${f.fat}g /100g</div>
+        </div>
+        <button class="btn btn-outline btn-sm" onclick="editCustomFood(${i})" style="margin-right:6px;">✏️</button>
+        <button class="btn btn-sm" style="background:var(--danger-light);color:var(--danger);" onclick="deleteCustomFood(${i})">🗑️</button>
+      </div>`;
+    });
+  }
+  modal.innerHTML = html;
+  openModal();
+}
+
+function editCustomFood(idx) {
+  const f = appData.customFoods[idx];
+  const modal = document.getElementById('modalSheet');
+  modal.innerHTML = `
+    <div class="ms-header">
+      <span class="ms-title">✏️ 编辑「${f.name}」</span>
+      <button class="ms-close" onclick="showCustomFoodManager()">✕</button>
+    </div>
+    <div style="margin-bottom:10px;">
+      <label style="font-size:12px;color:var(--text-secondary);">食物名称</label>
+      <input id="ecfName" value="${f.name}" style="width:100%;height:40px;background:var(--bg);border-radius:8px;padding:0 12px;font-size:14px;margin-top:4px;">
+    </div>
+    <p style="font-size:12px;color:var(--text-secondary);margin-bottom:8px;">每 100g 营养成分</p>
+    <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:8px;margin-bottom:12px;">
+      <div><label style="font-size:11px;color:var(--text-secondary);">热量 (kcal)</label>
+        <input id="ecfKcal" type="number" value="${f.kcal}" style="width:100%;height:40px;background:var(--bg);border-radius:8px;padding:0 12px;margin-top:2px;" inputmode="decimal"></div>
+      <div><label style="font-size:11px;color:var(--text-secondary);">蛋白质 (g)</label>
+        <input id="ecfProtein" type="number" value="${f.protein}" style="width:100%;height:40px;background:var(--bg);border-radius:8px;padding:0 12px;margin-top:2px;" inputmode="decimal"></div>
+      <div><label style="font-size:11px;color:var(--text-secondary);">碳水 (g)</label>
+        <input id="ecfCarbs" type="number" value="${f.carbs}" style="width:100%;height:40px;background:var(--bg);border-radius:8px;padding:0 12px;margin-top:2px;" inputmode="decimal"></div>
+      <div><label style="font-size:11px;color:var(--text-secondary);">脂肪 (g)</label>
+        <input id="ecfFat" type="number" value="${f.fat}" style="width:100%;height:40px;background:var(--bg);border-radius:8px;padding:0 12px;margin-top:2px;" inputmode="decimal"></div>
+    </div>
+    <button class="btn btn-primary btn-block" onclick="saveEditCustomFood(${idx})">💾 保存修改</button>
+  `;
+}
+
+function saveEditCustomFood(idx) {
+  const name = document.getElementById('ecfName').value.trim();
+  const kcal = Number(document.getElementById('ecfKcal').value);
+  const protein = Number(document.getElementById('ecfProtein').value);
+  const carbs = Number(document.getElementById('ecfCarbs').value);
+  const fat = Number(document.getElementById('ecfFat').value);
+
+  if (!name) { showToast('请输入食物名称'); return; }
+  if (!kcal && !protein && !carbs && !fat) { showToast('请至少填写一项营养数据'); return; }
+
+  appData.customFoods[idx] = { name, kcal: kcal || 0, protein: protein || 0, carbs: carbs || 0, fat: fat || 0, cat: '自定义' };
+  saveData();
+  showToast('✅ 已更新');
+  showCustomFoodManager();
+}
+
+function deleteCustomFood(idx) {
+  const name = appData.customFoods[idx].name;
+  if (confirm(`确认删除自定义食物「${name}」？`)) {
+    appData.customFoods.splice(idx, 1);
+    saveData();
+    showToast('已删除');
+    showCustomFoodManager();
+  }
+}
+
+function selectFoodForAdd(name) {
+  selectedFood = customFindFood(name);
+  document.getElementById('searchResults').classList.remove('show');
+  document.getElementById('foodSearchInput').value = name;
+  document.getElementById('foodAddForm').classList.add('show');
+  if (selectedFood) {
+    document.getElementById('selectedFoodName').textContent = name + ` (🔥${selectedFood.kcal} | 🥩${selectedFood.protein}g | 🍚${selectedFood.carbs}g | 🥑${selectedFood.fat}g /100g)`;
+  }
+}
+
+function addFoodToMeal() {
+  if (!selectedFood) { showToast('请先搜索并选择食物'); return; }
+  const amount = Number(document.getElementById('foodAmount').value);
+  if (!amount || amount <= 0) { showToast('请输入有效的克数'); return; }
+  const mealType = document.getElementById('mealTypeSelect').value;
+
+  const nutrition = customCalcNutrition(selectedFood.name, amount);
+
+  if (!appData.meals[dietDate]) appData.meals[dietDate] = [];
+  let mealGroup = appData.meals[dietDate].find(m => m.type === mealType);
+  if (!mealGroup) {
+    mealGroup = { type: mealType, foods: [] };
+    appData.meals[dietDate].push(mealGroup);
+  }
+  mealGroup.foods.push(nutrition);
+
+  // Track recent
+  trackRecentFood(selectedFood.name);
+
+  saveData();
+  selectedFood = null;
+  document.getElementById('foodAddForm').classList.remove('show');
+  document.getElementById('foodSearchInput').value = '';
+  renderDiet();
+
+  // Check and show reminders
+  const macros = getDayMacros(dietDate);
+  const target = getTargetForDate(dietDate);
+  checkMacroAlerts(macros, target);
+
+  showToast('✅ 已添加');
+}
+
+function cancelFoodAdd() {
+  selectedFood = null;
+  document.getElementById('foodAddForm').classList.remove('show');
+  document.getElementById('foodSearchInput').value = '';
+}
+
+function deleteMealFood(mealType, foodIdx) {
+  const meals = appData.meals[dietDate];
+  if (!meals) return;
+  const mealGroup = meals.find(m => m.type === mealType);
+  if (!mealGroup) return;
+  mealGroup.foods.splice(foodIdx, 1);
+  // Remove empty meal groups
+  appData.meals[dietDate] = meals.filter(m => m.foods.length > 0);
+  if (appData.meals[dietDate].length === 0) delete appData.meals[dietDate];
+  saveData();
+  renderDiet();
+  showToast('已删除');
+}
+
+function checkMacroAlerts(macros, target) {
+  const pctP = target.protein > 0 ? macros.protein / target.protein * 100 : 0;
+  const pctC = target.carbs > 0 ? macros.carbs / target.carbs * 100 : 0;
+  const pctF = target.fat > 0 ? macros.fat / target.fat * 100 : 0;
+
+  const alerts = [];
+  if (pctP < 60) alerts.push('蛋白质摄入偏低，建议多吃肉/蛋/奶');
+  if (pctP > 110) alerts.push('蛋白质已超标，注意控制');
+  if (pctC > 110) alerts.push('碳水已超标，少吃饭/面/甜食');
+  if (pctC < 40) alerts.push('碳水摄入偏少，训练前记得补碳');
+  if (pctF > 110) alerts.push('脂肪已超标，减少油/肥肉/坚果');
+  if (pctF < 30) alerts.push('脂肪摄入偏少，注意必需脂肪酸');
+
+  if (alerts.length > 0) {
+    setTimeout(() => showToast('⚠️ ' + alerts[0]), 500);
+  }
+}
+
+// ============================================================
+// Stats Tab
+// ============================================================
+function renderStats() {
+  const container = document.getElementById('tab-stats');
+  const totalWorkouts = appData.workouts.length;
+  const typeCount = { back: 0, chest: 0, legs: 0, swim: 0, rest: 0 };
+  let totalSets = 0;
+  appData.workouts.forEach(w => {
+    if (typeCount[w.type] !== undefined) typeCount[w.type]++;
+    w.exercises.forEach(ex => { totalSets += ex.sets.length; });
+  });
+
+  // Training streak
+  let streak = 0;
+  const today = todayStr();
+  const sorted = appData.workouts.map(w => w.date).sort().reverse();
+  // Simple: count consecutive days with workouts going backwards from today
+  const workoutDates = new Set(appData.workouts.map(w => w.date.slice(0,10)));
+  let check = new Date();
+  for (let i = 0; i < 365; i++) {
+    const ds = fmtDate(check);
+    if (workoutDates.has(ds)) { streak++; check.setDate(check.getDate() - 1); }
+    else break;
+  }
+
+  // Find max weight for key exercises over time
+  const exerciseHistory = {};
+  appData.workouts.slice().sort((a,b) => a.date.localeCompare(b.date)).forEach(w => {
+    w.exercises.forEach(ex => {
+      if (!exerciseHistory[ex.name]) exerciseHistory[ex.name] = [];
+      let maxWeight = 0;
+      ex.sets.forEach(s => { if (s.weight > maxWeight) maxWeight = s.weight; });
+      exerciseHistory[ex.name].push({ date: w.date, weight: maxWeight });
+    });
+  });
+
+  let html = '';
+
+  // Summary cards
+  html += `<div class="stat-grid">
+    <div class="stat-item">
+      <div class="si-num">${totalWorkouts}</div>
+      <div class="si-label">总训练次数</div>
+    </div>
+    <div class="stat-item">
+      <div class="si-num">${totalSets}</div>
+      <div class="si-label">总完成组数</div>
+    </div>
+    <div class="stat-item">
+      <div class="si-num">${streak}</div>
+      <div class="si-label">连续训练天数</div>
+    </div>
+    <div class="stat-item">
+      <div class="si-num">${Object.keys(appData.meals).length}</div>
+      <div class="si-label">饮食记录天数</div>
+    </div>
+  </div>`;
+
+  // Training frequency
+  html += `<div class="stat-card" style="margin-top:10px;">
+    <div class="sc-title">训练类型分布</div>`;
+  const maxCount = Math.max(1, ...Object.values(typeCount));
+  for (const [type, count] of Object.entries(typeCount)) {
+    const pct = count / maxCount * 100;
+    html += `<div class="freq-bar">
+      <div class="fb-label"><span>${TYPE_LABELS[type]}</span><span>${count}次</span></div>
+      <div class="fb-track"><div class="fb-fill" style="width:${pct}%;background:${TYPE_COLORS[type]}"></div></div>
+    </div>`;
+  }
+  html += `</div>`;
+
+  // Progress: key lifts weight over time
+  const keyLifts = ['杠铃卧推', '深蹲', '硬拉', '引体向上', '杠铃划船'];
+  const relevantLifts = keyLifts.filter(name => exerciseHistory[name] && exerciseHistory[name].length >= 2);
+  if (relevantLifts.length > 0) {
+    html += `<div class="stat-card">
+      <div class="sc-title">📈 主要动作重量趋势</div>`;
+    relevantLifts.forEach(name => {
+      const history = exerciseHistory[name];
+      const first = history[0];
+      const last = history[history.length - 1];
+      const delta = last.weight - first.weight;
+      const arrow = delta > 0 ? '↑' : delta < 0 ? '↓' : '→';
+      html += `<div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid var(--border);">
+        <span style="font-weight:600;">${name}</span>
+        <span style="font-size:13px;">
+          ${first.weight}kg → ${last.weight}kg
+          <span style="color:${delta>=0?'var(--success)':'var(--danger)'};font-weight:700;">${arrow} ${Math.abs(delta)}kg</span>
+        </span>
+      </div>`;
+    });
+    html += `</div>`;
+  }
+
+  // Body weight chart (simple)
+  if (appData.bodyWeight && appData.bodyWeight.length >= 2) {
+    html += `<div class="stat-card">
+      <div class="sc-title">⚖️ 体重变化</div>
+      <div class="weight-chart"><canvas id="weightCanvas"></canvas></div>
+    </div>`;
+  }
+
+  // Body weight input
+  html += `<div class="stat-card">
+    <div class="sc-title">⚖️ 记录体重</div>
+    <div style="display:flex;gap:8px;">
+      <input type="number" id="bwInput" placeholder="体重 (kg)" step="0.1" style="flex:1;height:40px;background:var(--bg);border-radius:8px;padding:0 12px;">
+      <button class="btn btn-primary btn-sm" onclick="addBodyWeight()">记录</button>
+    </div>
+    <div style="font-size:12px;color:var(--text-secondary);margin-top:6px;">
+      ${appData.bodyWeight && appData.bodyWeight.length > 0
+        ? `最近：${appData.bodyWeight[appData.bodyWeight.length-1].date} → ${appData.bodyWeight[appData.bodyWeight.length-1].weight}kg`
+        : '暂无记录'}
+    </div>
+  </div>`;
+
+  container.innerHTML = html;
+
+  // Draw weight chart if applicable
+  if (appData.bodyWeight && appData.bodyWeight.length >= 2) {
+    setTimeout(drawWeightChart, 100);
+  }
+}
+
+function addBodyWeight() {
+  const input = document.getElementById('bwInput');
+  const weight = Number(input.value);
+  if (!weight || weight <= 0) { showToast('请输入有效体重'); return; }
+  appData.bodyWeight.push({ date: todayStr(), weight });
+  appData.bodyWeight.sort((a,b) => a.date.localeCompare(b.date));
+  saveData();
+  input.value = '';
+  renderStats();
+  showToast('✅ 体重已记录');
+}
+
+function drawWeightChart() {
+  const canvas = document.getElementById('weightCanvas');
+  if (!canvas) return;
+  const ctx = canvas.getContext('2d');
+  const data = appData.bodyWeight;
+  if (data.length < 2) return;
+
+  const dpr = window.devicePixelRatio || 1;
+  const rect = canvas.parentElement.getBoundingClientRect();
+  canvas.width = rect.width * dpr;
+  canvas.height = 180 * dpr;
+  canvas.style.width = rect.width + 'px';
+  canvas.style.height = '180px';
+  ctx.scale(dpr, dpr);
+
+  const W = rect.width;
+  const H = 180;
+  const pad = { top: 20, right: 16, bottom: 30, left: 40 };
+  const pw = W - pad.left - pad.right;
+  const ph = H - pad.top - pad.bottom;
+
+  const minW = Math.min(...data.map(d => d.weight)) - 1;
+  const maxW = Math.max(...data.map(d => d.weight)) + 1;
+  const range = maxW - minW || 1;
+
+  function x(i) { return pad.left + (i / (data.length - 1)) * pw; }
+  function y(v) { return pad.top + ph - ((v - minW) / range) * ph; }
+
+  ctx.clearRect(0, 0, W, H);
+
+  // Grid
+  ctx.strokeStyle = '#e2e8f0';
+  ctx.lineWidth = 1;
+  for (let i = 0; i <= 4; i++) {
+    const gy = pad.top + (ph / 4) * i;
+    ctx.beginPath(); ctx.moveTo(pad.left, gy); ctx.lineTo(W - pad.right, gy); ctx.stroke();
+    const val = maxW - (range / 4) * i;
+    ctx.fillStyle = '#94a3b8';
+    ctx.font = '10px sans-serif';
+    ctx.textAlign = 'right';
+    ctx.fillText(val.toFixed(1), pad.left - 6, gy + 3);
+  }
+
+  // X labels
+  ctx.textAlign = 'center';
+  ctx.fillStyle = '#94a3b8';
+  const showEvery = Math.max(1, Math.floor(data.length / 6));
+  data.forEach((d, i) => {
+    if (i % showEvery === 0 || i === data.length - 1) {
+      ctx.fillText(d.date.slice(5), x(i), H - 8);
+    }
+  });
+
+  // Line
+  ctx.strokeStyle = '#3b82f6';
+  ctx.lineWidth = 2.5;
+  ctx.lineJoin = 'round';
+  ctx.beginPath();
+  data.forEach((d, i) => {
+    const px = x(i), py = y(d.weight);
+    if (i === 0) ctx.moveTo(px, py); else ctx.lineTo(px, py);
+  });
+  ctx.stroke();
+
+  // Dots
+  data.forEach((d, i) => {
+    const px = x(i), py = y(d.weight);
+    ctx.fillStyle = '#3b82f6';
+    ctx.beginPath(); ctx.arc(px, py, 3, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = '#fff';
+    ctx.beginPath(); ctx.arc(px, py, 1.5, 0, Math.PI * 2); ctx.fill();
+  });
+}
+
+// ============================================================
+// Export / Import
+// ============================================================
+function exportData() {
+  const blob = new Blob([JSON.stringify(appData, null, 2)], { type: 'application/json' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `fitness-backup-${todayStr()}.json`;
+  a.click();
+  URL.revokeObjectURL(a.href);
+  showToast('📤 数据已导出');
+}
+
+function importData(input) {
+  const file = input.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    try {
+      const data = JSON.parse(e.target.result);
+      if (!data.workouts || !data.meals) {
+        throw new Error('Invalid format');
+      }
+      if (confirm(`即将导入数据：${data.workouts.length}条训练，${Object.keys(data.meals).length}天饮食。\n当前数据将被覆盖，确认继续？`)) {
+        appData = { ...JSON.parse(JSON.stringify(DEFAULT_DATA)), ...data };
+        saveData();
+        refreshAll();
+        showToast('✅ 数据已导入');
+      }
+    } catch(err) {
+      showToast('⚠️ 文件格式错误');
+    }
+  };
+  reader.readAsText(file);
+  input.value = '';
+}
+
+function resetData() {
+  if (confirm('⚠️ 确认删除所有数据？此操作不可恢复！\n建议先导出备份。')) {
+    if (confirm('再次确认：删除所有训练和饮食记录？')) {
+      appData = JSON.parse(JSON.stringify(DEFAULT_DATA));
+      saveData();
+      refreshAll();
+      showToast('🗑️ 数据已重置');
+    }
+  }
+}
+
+// ============================================================
+// Navigation
+// ============================================================
+let currentTab = 'calendar';
+
+function switchTab(tab) {
+  currentTab = tab;
+  // Update nav
+  document.querySelectorAll('.nav-item').forEach(el => {
+    el.classList.toggle('active', el.dataset.tab === tab);
+  });
+  // Update panels
+  document.querySelectorAll('.tab-panel').forEach(el => {
+    el.classList.toggle('active', el.id === 'tab-' + tab);
+  });
+  // Update header
+  const titles = { calendar: '📅 健身记录', training: '🏋️ 训练', diet: '🍽️ 饮食', stats: '📊 统计' };
+  document.getElementById('headerTitle').textContent = titles[tab] || '健身记录';
+
+  // Render
+  if (tab === 'calendar') renderCalendar();
+  else if (tab === 'training') renderTraining();
+  else if (tab === 'diet') renderDiet();
+  else if (tab === 'stats') renderStats();
+}
+
+function refreshAll() {
+  renderCalendar();
+  renderTraining();
+  renderDiet();
+  renderStats();
+}
+
+document.querySelectorAll('.nav-item').forEach(item => {
+  item.addEventListener('click', () => switchTab(item.dataset.tab));
+});
+
+// ============================================================
+// Init
+// ============================================================
+function init() {
+  loadData();
+  initCalendar();
+  dietDate = todayStr();
+
+  // Restore unsaved draft if exists
+  const hasUnsavedDraft = loadDraft();
+  if (!hasUnsavedDraft) {
+    trainingDate = todayStr();
+    const presets = EXERCISE_PRESETS['back'];
+    if (presets && presets.length > 0) {
+      trainingExercises = [{ name: presets[0], sets: [{ weight: '', reps: '' }] }];
+    }
+  }
+  // If draft restored, trainingType/Date/Exercises are already set by loadDraft()
+
+  switchTab('calendar');
+}
+
+init();
+</script>
+
+</body>
+</html>
