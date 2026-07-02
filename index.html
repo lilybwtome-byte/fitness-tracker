@@ -221,6 +221,13 @@ input, select { font: inherit; border: none; outline: none; }
 }
 .exercise-card .ex-name {
   font-weight: 600; font-size: 15px; flex: 1;
+  background: transparent; border: none; padding: 4px 0;
+  color: var(--text); min-width: 0;
+}
+.exercise-card .ex-name:focus {
+  outline: none; border-bottom: 2px solid var(--primary);
+  background: var(--bg); padding: 4px 6px;
+  border-radius: 4px;
 }
 .exercise-card .ex-delete {
   width: 28px; height: 28px; border-radius: 50%;
@@ -1349,7 +1356,7 @@ function renderTraining() {
 function renderExerciseCard(ex, idx) {
   let html = `<div class="exercise-card">
     <div class="ex-header">
-      <span class="ex-name">${ex.name}</span>
+      <input class="ex-name" value="${ex.name}" onchange="renameExercise(${idx}, this.value)" placeholder="动作名称">
       <button class="ex-delete" onclick="removeExercise(${idx})">✕</button>
     </div>`;
   ex.sets.forEach((s, si) => {
@@ -1425,6 +1432,13 @@ function removeSet(ei, si) {
 function updateSet(ei, si, field, value) {
   trainingExercises[ei].sets[si][field] = value === '' ? '' : Number(value);
   saveDraft();
+}
+
+function renameExercise(ei, newName) {
+  if (newName.trim()) {
+    trainingExercises[ei].name = newName.trim();
+    saveDraft();
+  }
 }
 
 function removeExercise(ei) {
