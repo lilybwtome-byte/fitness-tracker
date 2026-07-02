@@ -1130,14 +1130,23 @@ function renderDayDetail(dateStr) {
     if (workout.exercises.length > 0) {
       html += `<div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;">`;
       workout.exercises.forEach((ex, exIdx) => {
-        const maxSet = ex.sets.reduce((best, s) => {
-          const vol = (s.weight||0) * (s.reps||0);
-          return vol > best.vol ? { weight: s.weight, reps: s.reps, vol } : best;
-        }, { weight: 0, reps: 0, vol: 0 });
+        const isSwim = workout.type === 'swim';
+        let detail;
+        if (isSwim) {
+          detail = '🏊 有氧游泳';
+        } else if (ex.sets.length > 0) {
+          const maxSet = ex.sets.reduce((best, s) => {
+            const vol = (s.weight||0) * (s.reps||0);
+            return vol > best.vol ? { weight: s.weight, reps: s.reps, vol } : best;
+          }, { weight: 0, reps: 0, vol: 0 });
+          detail = `${ex.sets.length}组 · 最大 ${maxSet.weight}kg×${maxSet.reps}`;
+        } else {
+          detail = '已记录';
+        }
         html += `<div style="background:var(--bg);border-radius:8px;padding:8px 10px;font-size:13px;line-height:1.4;min-width:0;">
           <input value="${ex.name}" onchange="renameSavedExercise('${dateStr}',${exIdx},this.value)"
             style="font-weight:600;font-size:13px;background:transparent;border:none;padding:0;width:100%;color:var(--text);min-width:0;" title="点击编辑名称">
-          <div style="color:var(--text-secondary);">${ex.sets.length}组 · 最大 ${maxSet.weight}kg×${maxSet.reps}</div>
+          <div style="color:var(--text-secondary);">${detail}</div>
         </div>`;
       });
       html += `</div>`;
@@ -1368,6 +1377,8 @@ function renderTraining() {
 }
 
 function renderExerciseCard(ex, idx) {
+  const isSwim = trainingType === 'swim';
+
   let html = `<div class="exercise-card">
     <div class="ex-header">
       <div style="flex:1;display:flex;align-items:center;gap:4px;">
@@ -1376,21 +1387,27 @@ function renderExerciseCard(ex, idx) {
       </div>
       <button class="ex-delete" onclick="removeExercise(${idx})">✕</button>
     </div>`;
-  ex.sets.forEach((s, si) => {
-    html += `<div class="set-row">
-      <span class="set-num">${si+1}</span>
-      <input type="number" placeholder="重量" value="${s.weight||''}"
-        onchange="updateSet(${idx},${si},'weight',this.value)" inputmode="decimal">
-      <span class="unit">kg</span>
-      <span>×</span>
-      <input type="number" placeholder="次数" value="${s.reps||''}"
-        onchange="updateSet(${idx},${si},'reps',this.value)" inputmode="numeric">
-      <span class="unit">次</span>
-      <button class="copy-set" onclick="duplicateSet(${idx},${si})" title="复制此组">📋</button>
-      <button class="del-set" onclick="removeSet(${idx},${si})">✕</button>
-    </div>`;
-  });
-  html += `<button class="add-set-btn" onclick="addSet(${idx})">+ 添加组（自动填充上一组）</button>`;
+
+  if (isSwim) {
+    // Swim: no sets/weight/reps, just note the stroke
+    html += `<div style="font-size:12px;color:var(--text-secondary);padding:4px 0;">🏊 有氧游泳 · 无重量组数</div>`;
+  } else {
+    ex.sets.forEach((s, si) => {
+      html += `<div class="set-row">
+        <span class="set-num">${si+1}</span>
+        <input type="number" placeholder="重量" value="${s.weight||''}"
+          onchange="updateSet(${idx},${si},'weight',this.value)" inputmode="decimal">
+        <span class="unit">kg</span>
+        <span>×</span>
+        <input type="number" placeholder="次数" value="${s.reps||''}"
+          onchange="updateSet(${idx},${si},'reps',this.value)" inputmode="numeric">
+        <span class="unit">次</span>
+        <button class="copy-set" onclick="duplicateSet(${idx},${si})" title="复制此组">📋</button>
+        <button class="del-set" onclick="removeSet(${idx},${si})">✕</button>
+      </div>`;
+    });
+    html += `<button class="add-set-btn" onclick="addSet(${idx})">+ 添加组（自动填充上一组）</button>`;
+  }
   html += `</div>`;
   return html;
 }
@@ -1531,13 +1548,20 @@ function addCustomExercise() {
 }
 
 function saveWorkout() {
-  // Filter out empty sets
-  const validExercises = trainingExercises.map(ex => ({
-    name: ex.name,
-    sets: ex.sets.filter(s => s.weight !== '' && s.reps !== '').map(s => ({
-      weight: Number(s.weight), reps: Number(s.reps)
-    }))
-  })).filter(ex => ex.sets.length > 0);
+  let validExercises;
+  if (trainingType === 'swim') {
+    // Swim: save exercise names only, no sets needed
+    validExercises = trainingExercises
+      .filter(ex => ex.name.trim())
+      .map(ex => ({ name: ex.name, sets: [] }));
+  } else {
+    validExercises = trainingExercises.map(ex => ({
+      name: ex.name,
+      sets: ex.sets.filter(s => s.weight !== '' && s.reps !== '').map(s => ({
+        weight: Number(s.weight), reps: Number(s.reps)
+      }))
+    })).filter(ex => ex.sets.length > 0);
+  }
 
   if (validExercises.length === 0 && !['rest','swim'].includes(trainingType)) {
     showToast('⚠️ 请至少完成一组训练');
