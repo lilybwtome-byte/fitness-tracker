@@ -1688,40 +1688,33 @@ function copyWorkoutToDate(fromDate) {
   const workout = getWorkout(fromDate);
   if (!workout || workout.exercises.length === 0) return;
   const modal = document.getElementById('modalSheet');
-  // Find dates in current month that don't have a workout yet
-  const year = calYear, month = calMonth;
-  const daysInMonth = new Date(year, month, 0).getDate();
-  let emptyDays = [];
-  for (let d = 1; d <= daysInMonth; d++) {
-    const ds = `${year}-${String(month).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
-    if (!getWorkout(ds) && ds !== fromDate) emptyDays.push(ds);
-  }
-  if (emptyDays.length === 0) {
-    showToast('本月没有空闲日期可复制');
-    return;
-  }
   modal.innerHTML = `
     <div class="ms-header">
       <span class="ms-title">📋 复制训练到...</span>
       <button class="ms-close" onclick="closeModal()">✕</button>
     </div>
-    <p style="font-size:13px;color:var(--text-secondary);margin-bottom:8px;">
-      将 ${fromDate}（${TYPE_LABELS[workout.type]} · ${workout.exercises.length}个动作）复制到：
+    <p style="font-size:13px;color:var(--text-secondary);margin-bottom:12px;">
+      将 <b>${fromDate}</b>（${TYPE_LABELS[workout.type]} · ${workout.exercises.length}个动作）复制到：
     </p>
-    <div style="display:flex;flex-wrap:wrap;gap:6px;max-height:220px;overflow-y:auto;">
-      ${emptyDays.map(ds => `
-        <button class="btn btn-outline btn-sm" onclick="doCopyWorkout('${fromDate}','${ds}')">
-          ${ds.slice(5)} ${['日','一','二','三','四','五','六'][new Date(ds).getDay()]}
-        </button>
-      `).join('')}
+    <div style="margin-bottom:12px;">
+      <label style="font-size:12px;color:var(--text-secondary);">目标日期</label>
+      <input type="date" id="copyTargetDate" value="${fromDate}"
+        style="width:100%;height:44px;background:var(--bg);border-radius:8px;padding:0 12px;font-size:16px;margin-top:4px;">
+    </div>
+    <button class="btn btn-primary btn-block" onclick="doCopyWorkout('${fromDate}')">✅ 确认复制</button>
+    <div style="font-size:11px;color:var(--text-secondary);margin-top:8px;text-align:center;">
+      如果目标日期已有训练记录，将被覆盖
     </div>
   `;
   openModal();
 }
 
-function doCopyWorkout(fromDate, toDate) {
+function doCopyWorkout(fromDate) {
   const src = getWorkout(fromDate);
   if (!src) return;
+  const toDate = document.getElementById('copyTargetDate').value;
+  if (!toDate) { showToast('请选择目标日期'); return; }
+  if (toDate === fromDate) { showToast('目标日期不能与来源相同'); return; }
   // Remove existing workout on target date if any
   appData.workouts = appData.workouts.filter(w => !sameDay(w.date, toDate));
   appData.workouts.push({
@@ -1732,6 +1725,13 @@ function doCopyWorkout(fromDate, toDate) {
   appData.workouts.sort((a, b) => b.date.localeCompare(a.date));
   saveData();
   closeModal();
+  // Switch calendar to the target month if different
+  const [y, m] = toDate.split('-').map(Number);
+  if (y !== calYear || m !== calMonth) {
+    calYear = y; calMonth = m;
+  }
+  renderCalendar();
+  selectedDay = toDate;
   renderCalendar();
   showToast(`✅ 已复制到 ${toDate}`);
 }
