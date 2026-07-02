@@ -1128,15 +1128,15 @@ function renderDayDetail(dateStr) {
     </div>`;
 
     if (workout.exercises.length > 0) {
-      html += `<div style="display:flex;flex-wrap:wrap;gap:6px;">`;
+      html += `<div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;">`;
       workout.exercises.forEach((ex, exIdx) => {
         const maxSet = ex.sets.reduce((best, s) => {
           const vol = (s.weight||0) * (s.reps||0);
           return vol > best.vol ? { weight: s.weight, reps: s.reps, vol } : best;
         }, { weight: 0, reps: 0, vol: 0 });
-        html += `<div style="background:var(--bg);border-radius:8px;padding:8px 10px;font-size:13px;line-height:1.4;">
+        html += `<div style="background:var(--bg);border-radius:8px;padding:8px 10px;font-size:13px;line-height:1.4;min-width:0;">
           <input value="${ex.name}" onchange="renameSavedExercise('${dateStr}',${exIdx},this.value)"
-            style="font-weight:600;font-size:13px;background:transparent;border:none;padding:0;width:100%;color:var(--text);">
+            style="font-weight:600;font-size:13px;background:transparent;border:none;padding:0;width:100%;color:var(--text);min-width:0;" title="点击编辑名称">
           <div style="color:var(--text-secondary);">${ex.sets.length}组 · 最大 ${maxSet.weight}kg×${maxSet.reps}</div>
         </div>`;
       });
