@@ -874,6 +874,7 @@ function loadData() {
       if (!appData.bodyWeight) appData.bodyWeight = [];
       if (!appData.customFoods) appData.customFoods = [];
       if (!appData.recentFoods) appData.recentFoods = [];
+      if (!appData.lastBackupDate) appData.lastBackupDate = null;
     }
   } catch(e) { console.error('Load error:', e); }
 }
@@ -1062,6 +1063,17 @@ function renderCalendar() {
     html += `<div style="margin-top:10px;padding:10px 14px;background:#fef3c7;border-radius:10px;display:flex;align-items:center;justify-content:space-between;font-size:13px;">
       <span>📝 有未保存的训练草稿（${trainingDate} · ${TYPE_LABELS[trainingType]||trainingType}）</span>
       <button class="btn btn-primary btn-sm" onclick="switchTab('training')">继续编辑</button>
+    </div>`;
+  }
+
+  // Backup reminder (every 7 days)
+  const lastBackup = appData.lastBackupDate;
+  const needBackup = !lastBackup || (new Date() - new Date(lastBackup)) / (1000*60*60*24) > 7;
+  if (needBackup && appData.workouts.length > 0) {
+    const daysSince = lastBackup ? Math.floor((new Date() - new Date(lastBackup)) / (1000*60*60*24)) : 99;
+    html += `<div style="margin-top:8px;padding:10px 14px;background:#dbeafe;border-radius:10px;display:flex;align-items:center;justify-content:space-between;font-size:13px;">
+      <span>💾 ${lastBackup ? `上次备份 ${daysSince} 天前` : '尚未备份过数据'}，建议导出备份</span>
+      <button class="btn btn-primary btn-sm" onclick="exportData()">立即备份</button>
     </div>`;
   }
 
@@ -2365,7 +2377,10 @@ function exportData() {
   a.download = `fitness-backup-${todayStr()}.json`;
   a.click();
   URL.revokeObjectURL(a.href);
+  appData.lastBackupDate = todayStr();
+  saveData();
   showToast('📤 数据已导出');
+  renderCalendar();
 }
 
 function importData(input) {
