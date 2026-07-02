@@ -1260,7 +1260,8 @@ function renderTraining() {
   </div>`;
 
   // Type selector
-  html += `<div class="type-selector">`;
+  html += `<div style="font-size:12px;font-weight:600;color:var(--text-secondary);margin-bottom:6px;">训练部位</div>
+  <div class="type-selector">`;
   for (const [key, label] of Object.entries(TYPE_LABELS)) {
     const active = trainingType === key ? ' active' : '';
     html += `<div class="type-chip${active} type-${key}" onclick="selectTrainingType('${key}')">${label}</div>`;
