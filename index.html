@@ -1684,38 +1684,58 @@ function renameSavedExercise(dateStr, exIdx, newName) {
   saveData();
 }
 
+let _copyMonth, _copyYear;
 function copyWorkoutToDate(fromDate) {
   const workout = getWorkout(fromDate);
   if (!workout || workout.exercises.length === 0) return;
+  _copyYear = calYear;
+  _copyMonth = calMonth;
+  renderCopyModal(fromDate);
+}
+function renderCopyModal(fromDate) {
+  const workout = getWorkout(fromDate);
   const modal = document.getElementById('modalSheet');
+  const daysInMonth = new Date(_copyYear, _copyMonth, 0).getDate();
+  const today = todayStr();
+
+  let emptyDays = [];
+  for (let d = 1; d <= daysInMonth; d++) {
+    const ds = `${_copyYear}-${String(_copyMonth).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+    if (ds !== fromDate) emptyDays.push(ds);
+  }
+
   modal.innerHTML = `
     <div class="ms-header">
       <span class="ms-title">📋 复制训练到...</span>
       <button class="ms-close" onclick="closeModal()">✕</button>
     </div>
-    <p style="font-size:13px;color:var(--text-secondary);margin-bottom:12px;">
+    <p style="font-size:13px;color:var(--text-secondary);margin-bottom:4px;">
       将 <b>${fromDate}</b>（${TYPE_LABELS[workout.type]} · ${workout.exercises.length}个动作）复制到：
     </p>
-    <div style="margin-bottom:12px;">
-      <label style="font-size:12px;color:var(--text-secondary);">目标日期</label>
-      <input type="date" id="copyTargetDate" value="${fromDate}"
-        style="width:100%;height:44px;background:var(--bg);border-radius:8px;padding:0 12px;font-size:16px;margin-top:4px;">
+    <div class="cal-header">
+      <button onclick="_copyMonth--;if(_copyMonth<1){_copyMonth=12;_copyYear--;}renderCopyModal('${fromDate}')">◀</button>
+      <span class="month-label">${_copyYear}年 ${_copyMonth}月</span>
+      <button onclick="_copyMonth++;if(_copyMonth>12){_copyMonth=1;_copyYear++;}renderCopyModal('${fromDate}')">▶</button>
     </div>
-    <button class="btn btn-primary btn-block" onclick="doCopyWorkout('${fromDate}')">✅ 确认复制</button>
-    <div style="font-size:11px;color:var(--text-secondary);margin-top:8px;text-align:center;">
-      如果目标日期已有训练记录，将被覆盖
+    <div style="display:flex;flex-wrap:wrap;gap:5px;max-height:240px;overflow-y:auto;margin-bottom:10px;">
+      ${emptyDays.map(ds => {
+        const hasWorkout = getWorkout(ds);
+        const d = parseInt(ds.slice(8));
+        const wd = ['日','一','二','三','四','五','六'][new Date(ds).getDay()];
+        const style = hasWorkout ? 'background:var(--warning-light);border:1px solid var(--warning);' : '';
+        return `<button class="btn btn-sm" style="font-size:12px;min-width:52px;${style}"
+          onclick="doCopyWorkout('${fromDate}','${ds}')">${d}日${wd}${hasWorkout?'⚠️':''}</button>`;
+      }).join('')}
     </div>
+    <div style="font-size:11px;color:var(--text-secondary);text-align:center;">⚠️ = 已有训练将被覆盖 &nbsp;|&nbsp; 空白 = 空闲日期 &nbsp;|&nbsp; ◀▶ 切换月份</div>
   `;
   openModal();
 }
 
-function doCopyWorkout(fromDate) {
+function doCopyWorkout(fromDate, toDate) {
   const src = getWorkout(fromDate);
   if (!src) return;
-  const toDate = document.getElementById('copyTargetDate').value;
-  if (!toDate) { showToast('请选择目标日期'); return; }
   if (toDate === fromDate) { showToast('目标日期不能与来源相同'); return; }
-  // Remove existing workout on target date if any
   appData.workouts = appData.workouts.filter(w => !sameDay(w.date, toDate));
   appData.workouts.push({
     date: toDate,
@@ -1725,12 +1745,8 @@ function doCopyWorkout(fromDate) {
   appData.workouts.sort((a, b) => b.date.localeCompare(a.date));
   saveData();
   closeModal();
-  // Switch calendar to the target month if different
   const [y, m] = toDate.split('-').map(Number);
-  if (y !== calYear || m !== calMonth) {
-    calYear = y; calMonth = m;
-  }
-  renderCalendar();
+  if (y !== calYear || m !== calMonth) { calYear = y; calMonth = m; }
   selectedDay = toDate;
   renderCalendar();
   showToast(`✅ 已复制到 ${toDate}`);
