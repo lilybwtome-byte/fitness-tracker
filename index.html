@@ -1196,9 +1196,12 @@ function renderDayDetail(dateStr) {
   html += `</div>`;
 
   // --- Quick actions ---
-  html += `<div style="display:flex;gap:8px;margin-top:12px;border-top:1px solid var(--border);padding-top:10px;">
+  html += `<div style="display:flex;gap:8px;margin-top:12px;border-top:1px solid var(--border);padding-top:10px;flex-wrap:wrap;">
     <button class="btn btn-primary btn-sm" onclick="quickEditDay('${dateStr}')">✏️ 编辑训练</button>
     <button class="btn btn-outline btn-sm" onclick="switchTab('diet');dietDate='${dateStr}';renderDiet();">🍽️ 记录饮食</button>`;
+  if (workout && workout.exercises.length > 0) {
+    html += `<button class="btn btn-sm" style="background:var(--primary-light);color:var(--primary);" onclick="copyWorkoutToDate('${dateStr}')">📋 复制到...</button>`;
+  }
   if (workout) {
     html += `<button class="btn btn-sm" style="background:var(--danger-light);color:var(--danger);" onclick="deleteDayWorkout('${dateStr}')">🗑️</button>`;
   }
@@ -1678,6 +1681,58 @@ function renameSavedExercise(dateStr, exIdx, newName) {
   if (!workout || !newName.trim()) return;
   workout.exercises[exIdx].name = newName.trim();
   saveData();
+}
+
+function copyWorkoutToDate(fromDate) {
+  const workout = getWorkout(fromDate);
+  if (!workout || workout.exercises.length === 0) return;
+  const modal = document.getElementById('modalSheet');
+  // Find dates in current month that don't have a workout yet
+  const year = calYear, month = calMonth;
+  const daysInMonth = new Date(year, month, 0).getDate();
+  let emptyDays = [];
+  for (let d = 1; d <= daysInMonth; d++) {
+    const ds = `${year}-${String(month).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+    if (!getWorkout(ds) && ds !== fromDate) emptyDays.push(ds);
+  }
+  if (emptyDays.length === 0) {
+    showToast('本月没有空闲日期可复制');
+    return;
+  }
+  modal.innerHTML = `
+    <div class="ms-header">
+      <span class="ms-title">📋 复制训练到...</span>
+      <button class="ms-close" onclick="closeModal()">✕</button>
+    </div>
+    <p style="font-size:13px;color:var(--text-secondary);margin-bottom:8px;">
+      将 ${fromDate}（${TYPE_LABELS[workout.type]} · ${workout.exercises.length}个动作）复制到：
+    </p>
+    <div style="display:flex;flex-wrap:wrap;gap:6px;max-height:220px;overflow-y:auto;">
+      ${emptyDays.map(ds => `
+        <button class="btn btn-outline btn-sm" onclick="doCopyWorkout('${fromDate}','${ds}')">
+          ${ds.slice(5)} ${['日','一','二','三','四','五','六'][new Date(ds).getDay()]}
+        </button>
+      `).join('')}
+    </div>
+  `;
+  openModal();
+}
+
+function doCopyWorkout(fromDate, toDate) {
+  const src = getWorkout(fromDate);
+  if (!src) return;
+  // Remove existing workout on target date if any
+  appData.workouts = appData.workouts.filter(w => !sameDay(w.date, toDate));
+  appData.workouts.push({
+    date: toDate,
+    type: src.type,
+    exercises: JSON.parse(JSON.stringify(src.exercises))
+  });
+  appData.workouts.sort((a, b) => b.date.localeCompare(a.date));
+  saveData();
+  closeModal();
+  renderCalendar();
+  showToast(`✅ 已复制到 ${toDate}`);
 }
 
 function deleteDayWorkout(dateStr) {
