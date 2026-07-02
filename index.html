@@ -1266,6 +1266,15 @@ function renderTraining() {
 
   // Exercise list
   if (trainingType !== 'rest') {
+    // Copy-from-last button
+    const lastSame = getLastWorkoutOfType(trainingType, trainingDate);
+    if (lastSame) {
+      html += `<div style="margin-bottom:10px;padding:10px 14px;background:var(--primary-light);border-radius:10px;display:flex;align-items:center;justify-content:space-between;font-size:13px;">
+        <span>📋 上次${TYPE_LABELS[trainingType]}：${lastSame.date}（${lastSame.exercises.length}个动作 · ${lastSame.exercises.reduce((s,ex)=>s+ex.sets.length,0)}组）</span>
+        <button class="btn btn-primary btn-sm" onclick="copyFromLastWorkout('${trainingType}')">一键复制</button>
+      </div>`;
+    }
+
     html += `<div id="exerciseList">`;
     trainingExercises.forEach((ex, ei) => {
       html += renderExerciseCard(ex, ei);
@@ -1380,6 +1389,24 @@ function renderExerciseCard(ex, idx) {
   html += `<button class="add-set-btn" onclick="addSet(${idx})">+ 添加组（自动填充上一组）</button>`;
   html += `</div>`;
   return html;
+}
+
+function getLastWorkoutOfType(type, beforeDate) {
+  return appData.workouts
+    .filter(w => w.type === type && w.date < beforeDate && w.exercises.length > 0)
+    .sort((a,b) => b.date.localeCompare(a.date))[0] || null;
+}
+
+function copyFromLastWorkout(type) {
+  const last = getLastWorkoutOfType(type, trainingDate || todayStr());
+  if (!last) { showToast('没有找到上次' + TYPE_LABELS[type] + '的训练'); return; }
+  if (trainingExercises.length > 0 && trainingExercises.some(ex => ex.sets.some(s => s.weight !== '' || s.reps !== ''))) {
+    if (!confirm('当前表单已有数据，复制将覆盖，确认？')) return;
+  }
+  trainingExercises = JSON.parse(JSON.stringify(last.exercises));
+  saveDraft();
+  renderTraining();
+  showToast('✅ 已复制 ' + last.date + ' 的训练');
 }
 
 function selectTrainingType(type) {
